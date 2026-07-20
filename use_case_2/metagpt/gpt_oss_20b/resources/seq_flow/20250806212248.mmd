@@ -1,0 +1,65 @@
+
+sequenceDiagram
+    participant G as GUI (Tkinter)
+    participant A as TicketAPI (Flask)
+    participant S as TicketService
+    participant R as TicketRepository
+    participant M as MessageRepository
+    participant D as Database
+
+    G->>A: POST /tickets {title, description, category, role}
+    A->>S: create_ticket(...)
+    S->>R: create(ticket)
+    R->>D: INSERT INTO tickets
+    D-->>R: ticket_id
+    R-->>S: ticket_id
+    S-->>A: 201 {ticket_id}
+    A-->>G: 201 {ticket_id}
+
+    G->>A: GET /tickets?role=User&status=open,active
+    A->>S: list_tickets(role, status_filter)
+    S->>R: list(filters)
+    R->>D: SELECT * FROM tickets WHERE ...
+    D-->>R: rows
+    R-->>S: tickets
+    S-->>A: 200 {tickets}
+    A-->>G: 200 {tickets}
+
+    G->>A: POST /tickets/42/messages {role, content}
+    A->>S: add_message(42, role, content)
+    S->>M: add(message)
+    M->>D: INSERT INTO messages
+    D-->>M: message_id
+    M-->>S: message_id
+    S-->>A: 201 {message_id}
+    A-->>G: 201 {message_id}
+
+    G->>A: PATCH /tickets/42/status {role, new_status}
+    A->>S: update_status(42, new_status)
+    S->>R: update(ticket)
+    R->>D: UPDATE tickets SET status=?, updated_at=? WHERE id=42
+    D-->>R: rows_affected
+    R-->>S: None
+    S-->>A: 204
+    A-->>G: 204
+
+    G->>AnalyticsService1: GET /open_tickets?start=...&end=...
+    AnalyticsService1->>R: count_open_tickets(start, end)
+    R->>D: SELECT COUNT(*) FROM tickets WHERE status='open' AND created_at BETWEEN ...
+    D-->>R: count
+    R-->>AnalyticsService1: count
+    AnalyticsService1-->>G: 200 {count}
+
+    G->>AnalyticsService2: GET /avg_resolution
+    AnalyticsService2->>R: average_resolution_time_by_month()
+    R->>D: SELECT strftime('%Y-%m', created_at) as month, AVG(julianday(closed_at)-julianday(created_at)) as avg_days FROM tickets WHERE status='closed' GROUP BY month
+    D-->>R: rows
+    R-->>AnalyticsService2: dict
+    AnalyticsService2-->>G: 200 {dict}
+
+    G->>AnalyticsService3: GET /active_by_category
+    AnalyticsService3->>R: active_tickets_by_category()
+    R->>D: SELECT category, COUNT(*) FROM tickets WHERE status='active' GROUP BY category
+    D-->>R: rows
+    R-->>AnalyticsService3: dict
+    AnalyticsService3-->>G: 200 {dict}

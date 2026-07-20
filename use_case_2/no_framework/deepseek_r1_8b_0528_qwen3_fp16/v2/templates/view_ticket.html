@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Ticket #{{ ticket.id }}</h2>
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ ticket.title }}</h5>
+            <p class="card-text">{{ ticket.description }}</p>
+            <p><strong>Submitter:</strong> {{ ticket.submitter }}</p>
+            <p><strong>Created At:</strong> {{ ticket.created_at }}</p>
+            <form method="POST" class="mb-3">
+                <label for="status" class="form-label">Update Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="Open" {% if ticket.status == 'Open' %}selected{% endif %}>Open</option>
+                    <option value="In Progress" {% if ticket.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Resolved" {% if ticket.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                    <option value="Closed" {% if ticket.status == 'Closed' %}selected{% endif %}>Closed</option>
+                </select>
+                <button type="submit" class="btn btn-primary mt-2">Update Status</button>
+            </form>
+            <div>
+                <a href="{{ url_for('download_pdf', ticket_id=ticket.id) }}" class="btn btn-success">Download PDF</a>
+                <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

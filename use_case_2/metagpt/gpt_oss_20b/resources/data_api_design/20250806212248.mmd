@@ -1,0 +1,87 @@
+
+classDiagram
+    class Ticket {
+        -id: int
+        -title: str
+        -description: str
+        -category: str
+        -status: str
+        -created_at: datetime
+        -updated_at: datetime
+        -closed_at: datetime | None
+        +__init__(self, title: str, description: str, category: str)
+        +to_dict() -> dict
+    }
+    class Message {
+        -id: int
+        -ticket_id: int
+        -author_role: str
+        -content: str
+        -timestamp: datetime
+        +__init__(self, ticket_id: int, author_role: str, content: str)
+        +to_dict() -> dict
+    }
+    class TicketRepository {
+        +create(ticket: Ticket) -> int
+        +get_by_id(ticket_id: int) -> Ticket | None
+        +update(ticket: Ticket) -> None
+        +list(filters: dict) -> List[Ticket]
+    }
+    class MessageRepository {
+        +add(message: Message) -> int
+        +list_by_ticket(ticket_id: int) -> List[Message]
+    }
+    class TicketService {
+        -repo: TicketRepository
+        -msg_repo: MessageRepository
+        +create_ticket(title: str, description: str, category: str) -> int
+        +get_ticket(ticket_id: int) -> Ticket
+        +update_status(ticket_id: int, new_status: str) -> None
+        +add_message(ticket_id: int, author_role: str, content: str) -> int
+        +list_tickets(role: str, status_filter: List[str]) -> List[Ticket]
+    }
+    class TicketAPI {
+        +app: Flask
+        +ticket_service: TicketService
+        +run()
+    }
+    class AnalyticsService1 {
+        +count_open_tickets(start: datetime, end: datetime) -> int
+    }
+    class AnalyticsService2 {
+        +average_resolution_time_by_month() -> Dict[str, float]
+    }
+    class AnalyticsService3 {
+        +active_tickets_by_category() -> Dict[str, int]
+    }
+    class LoginWindow {
+        +role: str
+        +continue()
+    }
+    class TicketListWindow {
+        +role: str
+        +refresh()
+    }
+    class TicketDetailWindow {
+        +ticket_id: int
+        +load()
+        +add_message()
+        +change_status()
+    }
+    class AnalyticsDashboardWindow {
+        +load_service1()
+        +load_service2()
+        +load_service3()
+    }
+    TicketService --> TicketRepository
+    TicketService --> MessageRepository
+    TicketAPI --> TicketService
+    AnalyticsService1 --> TicketRepository
+    AnalyticsService2 --> TicketRepository
+    AnalyticsService3 --> TicketRepository
+    LoginWindow --> TicketListWindow
+    TicketListWindow --> TicketDetailWindow
+    TicketDetailWindow --> TicketAPI
+    AnalyticsDashboardWindow --> AnalyticsService1
+    AnalyticsDashboardWindow --> AnalyticsService2
+    AnalyticsDashboardWindow --> AnalyticsService3

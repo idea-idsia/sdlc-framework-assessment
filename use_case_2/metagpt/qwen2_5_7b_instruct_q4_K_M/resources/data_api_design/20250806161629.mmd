@@ -1,0 +1,56 @@
+
+classDiagram
+    class User {
+        -id: int
+        -username: str
+        -password_hash: str
+        +__init__(username: str, password_hash: str)
+        +login() bool
+        +report_issue(issue: str) Ticket
+        +modify_ticket(ticket_id: int, status: str) bool
+    }
+    class Ticket {
+        -id: int
+        -user_id: int
+        -issue: str
+        -status: str
+        -created_at: datetime
+        -updated_at: datetime
+        +__init__(user_id: int, issue: str)
+        +update_status(status: str) bool
+    }
+    class Message {
+        -id: int
+        -ticket_id: int
+        -sender: User
+        -content: str
+        -created_at: datetime
+        +__init__(ticket_id: int, sender: User, content: str)
+    }
+    class HelpdeskStaff(User) {
+        +view_tickets(status: str) List[Ticket]
+        +change_ticket_status(ticket_id: int, new_status: str) bool
+    }
+    class DatabaseAPI {
+        -db_session: Session
+        +__init__(db_session: Session)
+        +create_user(username: str, password_hash: str) User
+        +get_user_by_username(username: str) Optional[User]
+        +create_ticket(user_id: int, issue: str) Ticket
+        +update_ticket(ticket_id: int, status: str) bool
+        +create_message(ticket_id: int, sender: User, content: str) Message
+    }
+    class MicroservicesAPI {
+        -db_api: DatabaseAPI
+        +__init__(db_api: DatabaseAPI)
+        +report_issue(username: str, issue: str) Ticket
+        +modify_ticket(username: str, ticket_id: int, status: str) bool
+        +view_tickets(status: str) List[Ticket]
+        +change_ticket_status(ticket_id: int, new_status: str) bool
+    }
+    User --> DatabaseAPI
+    User --> MicroservicesAPI
+    Ticket --> DatabaseAPI
+    Message --> DatabaseAPI
+    HelpdeskStaff --> DatabaseAPI
+    HelpdeskStaff --> MicroservicesAPI

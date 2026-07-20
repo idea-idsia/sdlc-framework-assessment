@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Detail</title>
+</head>
+<body>
+    <h1>{{ ticket.description }}</h1>
+    <p>Category: {{ ticket.category }}</p>
+    <p>Status: {{ ticket.status }}</p>
+    <ul>
+        {% for message in messages %}
+            <li>{{ message.content }} - {{ message.timestamp }}</li>
+        {% endfor %}
+    </ul>
+    <form method="post">
+        <textarea name="content" placeholder="Add a message"></textarea><br>
+        <button type="submit">Submit</button>
+    </form>
+    {% if user_type == 'helpdesk' %}
+        <form action="{{ url_for('update_ticket', ticket_id=ticket.id) }}" method="post">
+            <select name="status">
+                <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                <option value="active" {% if ticket.status == 'active' %}selected{% endif %}>Active</option>
+                <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+            </select><br>
+            <button type="submit">Update Status</button>
+        </form>
+    {% endif %}
+</body>
+</html>

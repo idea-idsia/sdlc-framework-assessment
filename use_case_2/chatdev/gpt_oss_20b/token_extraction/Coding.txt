@@ -1,0 +1,746 @@
+
+[ChatDev is a software company powered by multiple intelligent agents, such as chief executive officer, chief human resources officer, chief product officer, chief technology officer, etc, with a multi-agent organizational structure and the mission of 'changing the digital world through programming'.
+You are Chief Technology Officer. we are both working at ChatDev. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You are very familiar to information technology. You will make high-level decisions for the overarching technology infrastructure that closely align with the organization's goals, while you work alongside the organization's information technology ("IT") staff members to perform everyday operations.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, You must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+### Core Classes, Functions and Their Purpose
+
+| File | Class / Function | Purpose |
+|------|------------------|---------|
+| **models/ticket.py** | `Ticket` (dataclass) | Represents a ticket and its attributes. |
+| **models/database.py** | `DatabaseHandler` | Provides CRUD operations on the SQLite database. |
+| **gui/login_window.py** | `LoginWindow` | GUI for role selection (user / helpdesk). |
+| **gui/user_window.py** | `UserWindow` | GUI for regular users: create, view & edit tickets. |
+| **gui/helpdesk_window.py** | `HelpdeskWindow` | GUI for helpdesk staff: view all tickets, change status, chat. |
+| **services/api_client.py** | `APIClient` | Calls micro‑services to fetch analysis data. |
+| **services/service1.py** | Flask app exposing `/tickets/opening` | Count of open tickets in a selected period. |
+| **services/service2.py** | Flask app exposing `/tickets/avg_resolution_time` | Average resolution time by opening month. |
+| **services/service3.py** | Flask app exposing `/tickets/active_by_category` | Number of active tickets per category. |
+| **main.py** | Entry point | Launches the login window and, based on role, the appropriate main GUI. |
+
+---
+
+## File Contents
+
+---
+
+#### `models/ticket.py`
+
+```python
+"""
+models/ticket.py
+
+Defines the Ticket data model.
+"""
+
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import List
+
+@dataclass
+class Ticket:
+    id: int = field(default=None)
+    description: str = ""
+    category: str = ""
+    status: str = "open"
+    open_date: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    last_mod_date: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    close_date: str = None
+    messages: List[str] = field(default_factory=list)
+```
+
+---
+
+#### `models/database.py`
+
+```python
+"""
+models/database.py
+
+Handles all interactions with the SQLite database.
+"""
+
+import sqlite3
+from datetime import datetime
+from typing import List, Optional, Tuple
+from .ticket import Ticket
+
+DB_PATH = "tickets.db"
+
+class DatabaseHandler:
+    def __init__(self, db_path: str = DB_PATH):
+        self.db_path = db_path
+        self._init_db()
+
+    def _get_connection(self):
+        return sqlite3.connect(self.db_path)
+
+    def _init_db(self):
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                category TEXT NOT NULL,
+                status TEXT NOT NULL,
+                open_date TEXT NOT NULL,
+                last_mod_date TEXT NOT NULL,
+                close_date TEXT
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL,
+                message TEXT NOT NULL,
+                timestamp TEXT NOT NULL,
+                FOREIGN KEY(ticket_id) REFERENCES tickets(id)
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+    # ----- Ticket CRUD -----
+    def insert_ticket(self, ticket: Ticket) -> int:
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO tickets (description, category, status, open_date, last_mod_date, close_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            ticket.description,
+            ticket.category,
+            ticket.status,
+            ticket.open_date,
+            ticket.last_mod_date,
+            ticket.close_date
+        ))
+        ticket_id = cur.lastrowid
+        conn.commit()
+        conn.close()
+        return ticket_id
+
+    def get_tickets_by_status(self, statuses: List[str]) -> List[Ticket]:
+        placeholders = ','.join('?' for _ in statuses)
+        query = f"SELECT * FROM tickets WHERE status IN ({placeholders}) ORDER BY open_date DESC"
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute(query, statuses)
+        rows = cur.fetchall()
+        conn.close()
+        return [self._row_to_ticket(row) for row in rows]
+
+    def get_all_tickets(self) -> List[Ticket]:
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM tickets ORDER BY open_date DESC")
+        rows = cur.fetchall()
+        conn.close()
+        return [self._row_to_ticket(row) for row in rows]
+
+    def update_ticket_status(self, ticket_id: int, new_status: str) -> None:
+        close_date = None
+        if new_status == "closed":
+            close_date = datetime.utcnow().isoformat()
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE tickets
+            SET status = ?, last_mod_date = ?, close_date = COALESCE(?, close_date)
+            WHERE id = ?
+        """, (
+            new_status,
+            datetime.utcnow().isoformat(),
+            close_date,
+            ticket_id
+        ))
+        conn.commit()
+        conn.close()
+
+    def modify_ticket_description(self, ticket_id: int, new_description: str) -> None:
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE tickets
+            SET description = ?, last_mod_date = ?
+            WHERE id = ?
+        """, (
+            new_description,
+            datetime.utcnow().isoformat(),
+            ticket_id
+        ))
+        conn.commit()
+        conn.close()
+
+    # ----- Message CRUD -----
+    def add_message(self, ticket_id: int, message: str) -> None:
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO messages (ticket_id, message, timestamp)
+            VALUES (?, ?, ?)
+        """, (
+            ticket_id,
+            message,
+            datetime.utcnow().isoformat()
+        ))
+        conn.commit()
+        conn.close()
+
+    def get_messages_for_ticket(self, ticket_id: int) -> List[Tuple[str, str]]:
+        conn = self._get_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT message, timestamp FROM messages
+            WHERE ticket_id = ?
+            ORDER BY timestamp ASC
+        """, (ticket_id,))
+        rows = cur.fetchall()
+        conn.close()
+        return rows
+
+    # ----- Helpers -----
+    def _row_to_ticket(self, row: Tuple) -> Ticket:
+        return Ticket(
+            id=row[0],
+            description=row[1],
+            category=row[2],
+            status=row[3],
+            open_date=row[4],
+            last_mod_date=row[5],
+            close_date=row[6]
+        )
+```
+
+---
+
+#### `gui/login_window.py`
+
+```python
+"""
+gui/login_window.py
+
+Login window that lets the user select their role.
+"""
+
+import tkinter as tk
+from tkinter import ttk
+from typing import Callable
+
+class LoginWindow(tk.Tk):
+    def __init__(self, on_role_selected: Callable[[str], None]):
+        super().__init__()
+        self.title("Ticket Management - Login")
+        self.geometry("300x200")
+        self.resizable(False, False)
+        self.on_role_selected = on_role_selected
+        self._build_widgets()
+
+    def _build_widgets(self):
+        frame = ttk.Frame(self, padding=20)
+        frame.pack(expand=True, fill='both')
+
+        ttk.Label(frame, text="Select your role:", font=('Helvetica', 12)).pack(pady=10)
+
+        ttk.Button(frame, text="User", width=20,
+                   command=lambda: self._role_selected('user')).pack(pady=5)
+
+        ttk.Button(frame, text="Helpdesk Staff", width=20,
+                   command=lambda: self._role_selected('helpdesk')).pack(pady=5)
+
+    def _role_selected(self, role: str):
+        self.destroy()
+        self.on_role_selected(role)
+```
+
+---
+
+#### `gui/user_window.py`
+
+```python
+"""
+gui/user_window.py
+
+GUI for a normal user: create, view, edit tickets.
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+from typing import List
+from models.ticket import Ticket
+from models.database import DatabaseHandler
+
+class UserWindow(tk.Tk):
+    def __init__(self, db_handler: DatabaseHandler):
+        super().__init__()
+        self.title("Ticket Management - User")
+        self.geometry("800x600")
+        self.db_handler = db_handler
+        self.tickets: List[Ticket] = []
+        self._build_widgets()
+        self.refresh_ticket_list()
+
+    def _build_widgets(self):
+        # Toolbar
+        toolbar = ttk.Frame(self)
+        toolbar.pack(fill='x')
+
+        ttk.Button(toolbar, text="Create Ticket", command=self.create_ticket).pack(side='left', padx=5, pady=5)
+        ttk.Button(toolbar, text="Refresh", command=self.refresh_ticket_list).pack(side='left', padx=5, pady=5)
+
+        # Ticket List
+        self.tree = ttk.Treeview(self, columns=('ID', 'Description', 'Category', 'Status', 'Last Modified'), show='headings')
+        for col in ('ID', 'Description', 'Category', 'Status', 'Last Modified'):
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=100 if col == 'ID' else 150)
+        self.tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Bind double click to edit
+        self.tree.bind("<Double-1>", self.on_double_click)
+
+    def create_ticket(self):
+        desc = simpledialog.askstring("New Ticket", "Enter description:")
+        if not desc:
+            return
+        category = simpledialog.askstring("Category",
+                                          "Select category:\n1. Facility\n2. Technical IT\n3. Services\nEnter number:")
+        cat_map = {'1': 'facility', '2': 'technical', '3': 'services'}
+        if category not in cat_map:
+            messagebox.showerror("Error", "Invalid category selection.")
+            return
+        ticket = Ticket(description=desc, category=cat_map[category])
+        ticket_id = self.db_handler.insert_ticket(ticket)
+        messagebox.showinfo("Success", f"Ticket #{ticket_id} created.")
+        self.refresh_ticket_list()
+
+    def refresh_ticket_list(self):
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        self.tickets = self.db_handler.get_tickets_by_status(['open', 'active'])
+        for t in self.tickets:
+            self.tree.insert('', 'end', values=(t.id, t.description[:30], t.category, t.status, t.last_mod_date))
+
+    def on_double_click(self, event):
+        item = self.tree.selection()
+        if not item:
+            return
+        ticket_id = int(self.tree.item(item)['values'][0])
+        ticket = next((t for t in self.tickets if t.id == ticket_id), None)
+        if not ticket:
+            return
+        new_desc = simpledialog.askstring("Edit Ticket", "Enter new description:", initialvalue=ticket.description)
+        if new_desc:
+            self.db_handler.modify_ticket_description(ticket_id, new_desc)
+            messagebox.showinfo("Success", "Ticket updated.")
+            self.refresh_ticket_list()
+```
+
+---
+
+#### `gui/helpdesk_window.py`
+
+```python
+"""
+gui/helpdesk_window.py
+
+GUI for helpdesk staff: view all tickets, change status, chat.
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+from typing import List, Tuple
+from models.ticket import Ticket
+from models.database import DatabaseHandler
+
+class HelpdeskWindow(tk.Tk):
+    def __init__(self, db_handler: DatabaseHandler):
+        super().__init__()
+        self.title("Ticket Management - Helpdesk")
+        self.geometry("900x700")
+        self.db_handler = db_handler
+        self.tickets: List[Ticket] = []
+        self._build_widgets()
+        self.refresh_ticket_list()
+
+    def _build_widgets(self):
+        # Toolbar
+        toolbar = ttk.Frame(self)
+        toolbar.pack(fill='x')
+
+        ttk.Button(toolbar, text="Refresh", command=self.refresh_ticket_list).pack(side='left', padx=5, pady=5)
+
+        # Ticket List
+        self.tree = ttk.Treeview(self, columns=('ID', 'Description', 'Category', 'Status', 'Open Date', 'Last Modified', 'Close Date'), show='headings')
+        for col in ('ID', 'Description', 'Category', 'Status', 'Open Date', 'Last Modified', 'Close Date'):
+            self.tree.heading(col, text=col)
+            self.tree.column(col, width=80 if col == 'ID' else 120)
+        self.tree.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Bind double click to open detail window
+        self.tree.bind("<Double-1>", self.on_double_click)
+
+    def refresh_ticket_list(self):
+        for row in self.tree.get_children():
+            self.tree.delete(row)
+        self.tickets = self.db_handler.get_all_tickets()
+        for t in self.tickets:
+            self.tree.insert('', 'end', values=(
+                t.id,
+                t.description[:30],
+                t.category,
+                t.status,
+                t.open_date.split('T')[0],
+                t.last_mod_date.split('T')[0],
+                t.close_date.split('T')[0] if t.close_date else ''
+            ))
+
+    def on_double_click(self, event):
+        item = self.tree.selection()
+        if not item:
+            return
+        ticket_id = int(self.tree.item(item)['values'][0])
+        ticket = next((t for t in self.tickets if t.id == ticket_id), None)
+        if not ticket:
+            return
+        DetailWindow(self, ticket, self.db_handler, self.refresh_ticket_list)
+```
+
+---
+
+#### `gui/detail_window.py`
+
+```python
+"""
+gui/detail_window.py
+
+Popup window that shows ticket details, allows status change, and message exchange.
+"""
+
+import tkinter as tk
+from tkinter import ttk, messagebox, scrolledtext
+from typing import List, Tuple
+from models.ticket import Ticket
+from models.database import DatabaseHandler
+
+class DetailWindow(tk.Toplevel):
+    def __init__(self, parent, ticket: Ticket, db_handler: DatabaseHandler, on_refresh: callable):
+        super().__init__(parent)
+        self.title(f"Ticket #{ticket.id} Details")
+        self.geometry("600x500")
+        self.ticket = ticket
+        self.db_handler = db_handler
+        self.on_refresh = on_refresh
+        self._build_widgets()
+        self.refresh_messages()
+
+    def _build_widgets(self):
+        # Ticket Info
+        info_frame = ttk.LabelFrame(self, text="Ticket Info", padding=10)
+        info_frame.pack(fill='x', padx=10, pady=5)
+
+        ttk.Label(info_frame, text=f"ID: {self.ticket.id}").grid(row=0, column=0, sticky='w')
+        ttk.Label(info_frame, text=f"Category: {self.ticket.category}").grid(row=1, column=0, sticky='w')
+        ttk.Label(info_frame, text=f"Status: {self.ticket.status}").grid(row=2, column=0, sticky='w')
+        ttk.Label(info_frame, text=f"Opened: {self.ticket.open_date}").grid(row=3, column=0, sticky='w')
+        ttk.Label(info_frame, text=f"Last Modified: {self.ticket.last_mod_date}").grid(row=4, column=0, sticky='w')
+        ttk.Label(info_frame, text=f"Closed: {self.ticket.close_date or 'N/A'}").grid(row=5, column=0, sticky='w')
+        ttk.Label(info_frame, text=f"Description: {self.ticket.description}").grid(row=6, column=0, sticky='w')
+
+        # Status change buttons
+        status_frame = ttk.Frame(info_frame)
+        status_frame.grid(row=7, column=0, pady=5)
+        if self.ticket.status == 'open':
+            ttk.Button(status_frame, text="Start Work", command=self.start_work).pack(side='left', padx=5)
+        elif self.ticket.status == 'active':
+            ttk.Button(status_frame, text="Close Ticket", command=self.close_ticket).pack(side='left', padx=5)
+
+        # Message Exchange
+        msg_frame = ttk.LabelFrame(self, text="Message Exchange", padding=10)
+        msg_frame.pack(fill='both', expand=True, padx=10, pady=5)
+
+        self.msg_text = scrolledtext.ScrolledText(msg_frame, height=10)
+        self.msg_text.pack(fill='both', expand=True)
+
+        send_frame = ttk.Frame(msg_frame)
+        send_frame.pack(fill='x', pady=5)
+        ttk.Entry(send_frame, textvariable=tk.StringVar()).pack(fill='x', side='left', expand=True, padx=5)
+        ttk.Button(send_frame, text="Send", command=self.send_message).pack(side='right', padx=5)
+
+    def start_work(self):
+        self.db_handler.update_ticket_status(self.ticket.id, 'active')
+        messagebox.showinfo("Success", "Ticket status changed to ACTIVE.")
+        self.on_refresh()
+        self.destroy()
+
+    def close_ticket(self):
+        self.db_handler.update_ticket_status(self.ticket.id, 'closed')
+        messagebox.showinfo("Success", "Ticket status changed to CLOSED.")
+        self.on_refresh()
+        self.destroy()
+
+    def refresh_messages(self):
+        messages = self.db_handler.get_messages_for_ticket(self.ticket.id)
+        self.msg_text.delete('1.0', tk.END)
+        for msg, ts in messages:
+            self.msg_text.insert(tk.END, f"[{ts}] {msg}\n")
+
+    def send_message(self):
+        # Retrieve last entry from entry widget
+        entry = self.msg_text.master.winfo_children()[-1].get()
+        if not entry.strip():
+            return
+        self.db_handler.add_message(self.ticket.id, entry)
+        self.refresh_messages()
+```
+
+---
+
+#### `services/api_client.py`
+
+```python
+"""
+services/api_client.py
+
+Client helper to call micro‑services.
+"""
+
+import requests
+from typing import Any, Dict
+
+class APIClient:
+    def __init__(self, base_url: str = "http://127.0.0.1:5000"):
+        self.base_url = base_url.rstrip('/')
+
+    def get_open_tickets(self, period_type: str, value: int) -> Dict[str, Any]:
+        """
+        Service 1: Count of open tickets in the selected period.
+        period_type: 'hours' or 'days'
+        """
+        resp = requests.get(f"{self.base_url}/tickets/opening",
+                            params={'period_type': period_type, 'value': value})
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_avg_resolution_time(self) -> Dict[str, Any]:
+        """
+        Service 2: Average resolution time by month.
+        """
+        resp = requests.get(f"{self.base_url}/tickets/avg_resolution_time")
+        resp.raise_for_status()
+        return resp.json()
+
+    def get_active_by_category(self) -> Dict[str, Any]:
+        """
+        Service 3: Active tickets per category.
+        """
+        resp = requests.get(f"{self.base_url}/tickets/active_by_category")
+        resp.raise_for_status()
+        return resp.json()
+```
+
+---
+
+#### `services/service1.py`
+
+```python
+"""
+services/service1.py
+
+Flask micro‑service that counts open tickets in a selected period.
+"""
+
+from flask import Flask, request, jsonify
+import datetime
+from models.database import DatabaseHandler
+
+app = Flask(__name__)
+db = DatabaseHandler()
+
+@app.route("/tickets/opening", methods=['GET'])
+def opening_tickets():
+    period_type = request.args.get('period_type', 'days')
+    try:
+        value = int(request.args.get('value', 1))
+    except ValueError:
+        return jsonify({"error": "value must be an integer"}), 400
+
+    now = datetime.datetime.utcnow()
+    if period_type == 'hours':
+        delta = datetime.timedelta(hours=value)
+    else:  # default to days
+        delta = datetime.timedelta(days=value)
+
+    cutoff = now - delta
+    tickets = db.get_all_tickets()
+    count = sum(1 for t in tickets if t.status != 'closed' and datetime.datetime.fromisoformat(t.open_date) >= cutoff)
+    return jsonify({"open_tickets": count})
+
+if __name__ == "__main__":
+    app.run(port=5001)
+```
+
+---
+
+#### `services/service2.py`
+
+```python
+"""
+services/service2.py
+
+Flask micro‑service that computes average resolution time by month.
+"""
+
+from flask import Flask, jsonify
+import datetime
+from collections import defaultdict
+from models.database import DatabaseHandler
+
+app = Flask(__name__)
+db = DatabaseHandler()
+
+@app.route("/tickets/avg_resolution_time", methods=['GET'])
+def avg_resolution():
+    tickets = db.get_all_tickets()
+    month_times = defaultdict(list)
+    for t in tickets:
+        if t.close_date:
+            open_dt = datetime.datetime.fromisoformat(t.open_date)
+            close_dt = datetime.datetime.fromisoformat(t.close_date)
+            duration = (close_dt - open_dt).total_seconds() / 3600.0  # hours
+            month = open_dt.strftime("%Y-%m")
+            month_times[month].append(duration)
+
+    result = {month: sum(times)/len(times) if times else None for month, times in month_times.items()}
+    return jsonify(result)
+
+if __name__ == "__main__":
+    app.run(port=5002)
+```
+
+---
+
+#### `services/service3.py`
+
+```python
+"""
+services/service3.py
+
+Flask micro‑service that clusters tickets by category and counts active ones.
+"""
+
+from flask import Flask, jsonify
+from collections import Counter
+from models.database import DatabaseHandler
+
+app = Flask(__name__)
+db = DatabaseHandler()
+
+@app.route("/tickets/active_by_category", methods=['GET'])
+def active_by_category():
+    tickets = db.get_all_tickets()
+    active_tickets = [t for t in tickets if t.status == 'active']
+    counter = Counter(t.category for t in active_tickets)
+    return jsonify(dict(counter))
+
+if __name__ == "__main__":
+    app.run(port=5003)
+```
+
+---
+
+#### `main.py`
+
+```python
+"""
+main.py
+
+Entry point for the Ticket Management Application.
+"""
+
+import tkinter as tk
+from gui.login_window import LoginWindow
+from gui.user_window import UserWindow
+from gui.helpdesk_window import HelpdeskWindow
+from models.database import DatabaseHandler
+
+def launch_user_app():
+    db_handler = DatabaseHandler()
+    app = UserWindow(db_handler)
+    app.mainloop()
+
+def launch_helpdesk_app():
+    db_handler = DatabaseHandler()
+    app = HelpdeskWindow(db_handler)
+    app.mainloop()
+
+def main():
+    root = LoginWindow(on_role_selected=lambda role: launch_user_app() if role == 'user' else launch_helpdesk_app())
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+### How to Run
+
+1. **Start the micro‑services** (in separate terminals or background processes):
+
+```bash
+# Service 1
+python services/service1.py
+
+# Service 2
+python services/service2.py
+
+# Service 3
+python services/service3.py
+```
+
+2. **Launch the GUI application**:
+
+```bash
+python main.py
+```
+
+The login window will ask you to pick **User** or **Helpdesk Staff**.
+After selecting, the appropriate interface will open, allowing you to create tickets, view/modify them, and, for helpdesk staff, change statuses and chat.
+
+All data is persisted in `tickets.db`. The micro‑services access the same database to provide analytics.

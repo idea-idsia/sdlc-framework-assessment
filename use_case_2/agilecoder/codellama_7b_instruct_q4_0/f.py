@@ -1,0 +1,5 @@
+'''
+$DOCSTRING
+'''
+def f():
+    pass

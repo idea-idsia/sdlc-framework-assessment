@@ -1,0 +1,32 @@
+
+sequenceDiagram
+    participant U as User
+    participant F as Frontend (React)
+    participant B as Backend (Django)
+    participant DB as Database (PostgreSQL)
+    participant AS as AnalysisService
+    U->>F: Access application
+    F->>B: Request login
+    B->>DB: Verify credentials
+    DB-->>B: Return user data
+    B-->>F: Authenticate user
+    U->>F: Report issue
+    F->>B: Submit ticket form
+    B->>DB: Save new ticket
+    DB-->>B: Confirmation
+    B-->>F: Ticket created successfully
+    U->>F: View tickets
+    F->>B: Request all tickets
+    B->>DB: Fetch tickets
+    DB-->>B: Return tickets data
+    B-->>F: Display tickets
+    U->>F: Update ticket status
+    F->>B: Submit update
+    B->>DB: Update ticket
+    DB-->>B: Confirmation
+    B-->>F: Ticket updated
+    U->>F: View analysis
+    F->>AS: Request trends data
+    AS->>DB: Fetch relevant data
+    DB-->>AS: Return data
+    AS-->>F: Generate and return report

@@ -1,0 +1,23 @@
+
+sequenceDiagram
+    participant M as main.py
+    participant U as User
+    participant T as Ticket
+    participant MS as Message
+    participant HS as HelpdeskStaff
+    participant DB as Database
+    M->>U: create_user(username, email)
+    U->>DB: insert_data('users', {username, email})
+    DB-->>U: return user_id
+    M->>T: create_ticket(title, description, user_id)
+    T->>DB: insert_data('tickets', {title, description, user_id})
+    DB-->>T: return ticket_id
+    M->>MS: create_message(content, ticket_id, user_id)
+    MS->>DB: insert_data('messages', {content, ticket_id, user_id})
+    DB-->>MS: return message_id
+    HS->>T: assign_ticket(ticket_id, staff_id)
+    T->>DB: update_data('tickets', {status}, ticket_id)
+    DB-->>T: return updated_ticket
+    M->>U: get_tickets(user_id)
+    U->>DB: query_data('tickets', 'user_id = {}'.format(user_id))
+    DB-->>U: return tickets

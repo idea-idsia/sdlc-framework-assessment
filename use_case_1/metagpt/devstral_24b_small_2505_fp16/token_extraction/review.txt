@@ -1,0 +1,1287 @@
+
+# System
+Role: You are a professional software engineer, and your main task is to review and revise the code. You need to ensure that the code conforms to the google-style standards, is elegantly designed and modularized, easy to read and maintain.
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## System Design
+{"Implementation approach":"We will implement a simple snake game using Python with Pygame library for graphics and user input handling. The game will feature basic snake movement, food generation, collision detection, score tracking, and a game over screen with restart functionality.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclassDiagram\n    class SnakeGame {\n        -screen: Surface\n        -clock: Clock\n        -snake: List[Tuple[int, int]]\n        -direction: str\n        -food: Tuple[int, int]\n        -score: int\n        +__init__(self)\n        +run(self)\n        +handle_events(self)\n        +update(self)\n        +draw(self)\n    }\n    classDiagram\n    class Snake {\n        -body: List[Tuple[int, int]]\n        -direction: str\n        +__init__(self)\n        +move(self)\n        +grow(self)\n        +check_collision(self)\n    }\n    class Food {\n        -position: Tuple[int, int]\n        +__init__(self)\n        +generate_random_position(self)\n    }\n\n    SnakeGame --> Snake\n    SnakeGame --> Food\n","Program call flow":"\nsequenceDiagram\n    participant U as User\n    participant SG as SnakeGame\n    participant S as Snake\n    participant F as Food\n    U->>SG: Start game\n    SG->>S: Initialize snake\n    SG->>F: Generate food position\n    loop Game Loop\n        U->>SG: Handle events (key presses)\n        SG->>S: Update direction\n        S->>S: Move snake\n        S-->>SG: Return new head position\n        SG->>S: Check for collision with self or walls\n        alt Snake eats food\n            S->>F: Check if snake head at food position\n            F-->>S: Yes, return True\n            S->>S: Grow snake\n            SG->>F: Generate new food position\n        end\n        SG->>SG: Update score\n        SG->>SG: Draw game elements\n    end\n    alt Game Over\n        U->>SG: Handle events (key presses)\n        SG-->>U: Show game over screen with restart option\n    end\n","Anything UNCLEAR":""}
+
+## Task
+{"Required Python packages":["pygame==2.1.0"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class with methods to run the game, handle events, update game state, and draw graphics.","Contains Snake class for snake movement, growth, and collision detection.","Contains Food class for generating random food positions."],["main.py","Contains main function to initialize and start the SnakeGame."]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains classes shared across the project, including SnakeGame, Snake, and Food.","Anything UNCLEAR":""}
+
+## Code Files
+
+
+
+## Code to be Reviewed: snake_game.py
+```Code
+## snake_game.py
+
+import pygame
+import random
+from typing import List, Tuple
+
+class Snake:
+    def __init__(self):
+        self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+        self.direction: str = 'RIGHT'
+
+    def move(self) -> None:
+        head_x, head_y = self.body[0]
+        if self.direction == 'UP':
+            new_head = (head_x, head_y - 10)
+        elif self.direction == 'DOWN':
+            new_head = (head_x, head_y + 10)
+        elif self.direction == 'LEFT':
+            new_head = (head_x - 10, head_y)
+        elif self.direction == 'RIGHT':
+            new_head = (head_x + 10, head_y)
+
+        self.body.insert(0, new_head)
+        self.body.pop()
+
+    def grow(self) -> None:
+        self.body.append(self.body[-1])
+
+    def check_collision(self) -> bool:
+        # Check collision with itself
+        if self.body[0] in self.body[1:]:
+            return True
+
+        # Check collision with walls (assuming screen size is 800x600)
+        head_x, head_y = self.body[0]
+        if head_x < 0 or head_x >= 800 or head_y < 0 or head_y >= 600:
+            return True
+
+        return False
+
+class Food:
+    def __init__(self):
+        self.position: Tuple[int, int] = (0, 0)
+        self.generate_random_position()
+
+    def generate_random_position(self) -> None:
+        self.position = (random.randint(0, 79) * 10, random.randint(0, 59) * 10)
+
+class SnakeGame:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption('Snake Game')
+        self.clock = pygame.time.Clock()
+
+        self.snake = Snake()
+        self.food = Food()
+        self.score: int = 0
+
+    def run(self) -> None:
+        running = True
+        while running:
+            self.handle_events()
+            if not self.update():
+                running = False
+            self.draw()
+
+        pygame.quit()
+
+    def handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != 'DOWN':
+                    self.snake.direction = 'UP'
+                elif event.key == pygame.K_DOWN and self.snake.direction != 'UP':
+                    self.snake.direction = 'DOWN'
+                elif event.key == pygame.K_LEFT and self.snake.direction != 'RIGHT':
+                    self.snake.direction = 'LEFT'
+                elif event.key == pygame.K_RIGHT and self.snake.direction != 'LEFT':
+                    self.snake.direction = 'RIGHT'
+
+    def update(self) -> bool:
+        self.snake.move()
+
+        # Check if snake eats food
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            self.food.generate_random_position()
+            self.score += 1
+
+        return not self.snake.check_collision()
+
+    def draw(self) -> None:
+        self.screen.fill((0, 0, 0))
+
+        # Draw snake
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(segment[0], segment[1], 10, 10))
+
+        # Draw food
+        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food.position[0], self.food.position[1], 10, 10))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+        self.clock.tick(15)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
+
+```
+
+
+
+# Format example 1
+## Code Review: snake_game.py
+1. No, we should fix the logic of class A due to ...
+2. ...
+3. ...
+4. No, function B is not implemented, ...
+5. ...
+6. ...
+
+## Actions
+1. Fix the `handle_events` method to update the game state only if a move is successful.
+   ```python
+   def handle_events(self):
+       for event in pygame.event.get():
+           if event.type == pygame.QUIT:
+               return False
+           if event.type == pygame.KEYDOWN:
+               moved = False
+               if event.key == pygame.K_UP:
+                   moved = self.game.move('UP')
+               elif event.key == pygame.K_DOWN:
+                   moved = self.game.move('DOWN')
+               elif event.key == pygame.K_LEFT:
+                   moved = self.game.move('LEFT')
+               elif event.key == pygame.K_RIGHT:
+                   moved = self.game.move('RIGHT')
+               if moved:
+                   # Update the game state only if a move was successful
+                   self.render()
+       return True
+   ```
+2. Implement function B
+
+## Code Review Result
+LBTM
+
+# Format example 2
+## Code Review: snake_game.py
+1. Yes.
+2. Yes.
+3. Yes.
+4. Yes.
+5. Yes.
+6. Yes.
+
+## Actions
+pass
+
+## Code Review Result
+LGTM
+
+
+
+# Instruction: Based on the actual code situation, follow one of the "Format example". Return only 1 file under review.
+
+## Code Review: Ordered List. Based on the "Code to be Reviewed", provide key, clear, concise, and specific answer. If any answer is no, explain how to fix it step by step.
+1. Is the code implemented as per the requirements? If not, how to achieve it? Analyse it step by step.
+2. Is the code logic completely correct? If there are errors, please indicate how to correct them.
+3. Does the existing code follow the "Data structures and interfaces"?
+4. Are all functions implemented? If there is no implementation, please indicate how to achieve it step by step.
+5. Have all necessary pre-dependencies been imported? If not, indicate which ones need to be imported
+6. Are methods from other files being reused correctly?
+
+## Actions: Ordered List. Things that should be done after CR, such as implementing class A and function B
+
+## Code Review Result: str. If the code doesn't have bugs, we don't need to rewrite it, so answer LGTM and stop. ONLY ANSWER LGTM/LBTM.
+LGTM/LBTM
+
+
+
+
+
+
+# System
+Role: You are a professional software engineer, and your main task is to review and revise the code. You need to ensure that the code conforms to the google-style standards, is elegantly designed and modularized, easy to read and maintain.
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## System Design
+{"Implementation approach":"We will implement a simple snake game using Python with Pygame library for graphics and user input handling. The game will feature basic snake movement, food generation, collision detection, score tracking, and a game over screen with restart functionality.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclassDiagram\n    class SnakeGame {\n        -screen: Surface\n        -clock: Clock\n        -snake: List[Tuple[int, int]]\n        -direction: str\n        -food: Tuple[int, int]\n        -score: int\n        +__init__(self)\n        +run(self)\n        +handle_events(self)\n        +update(self)\n        +draw(self)\n    }\n    classDiagram\n    class Snake {\n        -body: List[Tuple[int, int]]\n        -direction: str\n        +__init__(self)\n        +move(self)\n        +grow(self)\n        +check_collision(self)\n    }\n    class Food {\n        -position: Tuple[int, int]\n        +__init__(self)\n        +generate_random_position(self)\n    }\n\n    SnakeGame --> Snake\n    SnakeGame --> Food\n","Program call flow":"\nsequenceDiagram\n    participant U as User\n    participant SG as SnakeGame\n    participant S as Snake\n    participant F as Food\n    U->>SG: Start game\n    SG->>S: Initialize snake\n    SG->>F: Generate food position\n    loop Game Loop\n        U->>SG: Handle events (key presses)\n        SG->>S: Update direction\n        S->>S: Move snake\n        S-->>SG: Return new head position\n        SG->>S: Check for collision with self or walls\n        alt Snake eats food\n            S->>F: Check if snake head at food position\n            F-->>S: Yes, return True\n            S->>S: Grow snake\n            SG->>F: Generate new food position\n        end\n        SG->>SG: Update score\n        SG->>SG: Draw game elements\n    end\n    alt Game Over\n        U->>SG: Handle events (key presses)\n        SG-->>U: Show game over screen with restart option\n    end\n","Anything UNCLEAR":""}
+
+## Task
+{"Required Python packages":["pygame==2.1.0"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class with methods to run the game, handle events, update game state, and draw graphics.","Contains Snake class for snake movement, growth, and collision detection.","Contains Food class for generating random food positions."],["main.py","Contains main function to initialize and start the SnakeGame."]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains classes shared across the project, including SnakeGame, Snake, and Food.","Anything UNCLEAR":""}
+
+## Code Files
+
+
+
+## Code to be Reviewed: snake_game.py
+```Code
+## snake_game.py
+
+import pygame
+import random
+from typing import List, Tuple
+
+class Snake:
+    def __init__(self):
+        self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+        self.direction: str = 'RIGHT'
+
+    def move(self) -> None:
+        head_x, head_y = self.body[0]
+        if self.direction == 'UP':
+            new_head = (head_x, head_y - 10)
+        elif self.direction == 'DOWN':
+            new_head = (head_x, head_y + 10)
+        elif self.direction == 'LEFT':
+            new_head = (head_x - 10, head_y)
+        elif self.direction == 'RIGHT':
+            new_head = (head_x + 10, head_y)
+
+        self.body.insert(0, new_head)
+        self.body.pop()
+
+    def grow(self) -> None:
+        self.body.append(self.body[-1])
+
+    def check_collision(self) -> bool:
+        # Check collision with itself
+        if self.body[0] in self.body[1:]:
+            return True
+
+        # Check collision with walls (assuming screen size is 800x600)
+        head_x, head_y = self.body[0]
+        if head_x < 0 or head_x >= 800 or head_y < 0 or head_y >= 600:
+            return True
+
+        return False
+
+class Food:
+    def __init__(self):
+        self.position: Tuple[int, int] = (0, 0)
+        self.generate_random_position()
+
+    def generate_random_position(self) -> None:
+        self.position = (random.randint(0, 79) * 10, random.randint(0, 59) * 10)
+
+class SnakeGame:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption('Snake Game')
+        self.clock = pygame.time.Clock()
+
+        self.snake = Snake()
+        self.food = Food()
+        self.score: int = 0
+
+    def run(self) -> None:
+        running = True
+        while running:
+            self.handle_events()
+            if not self.update():
+                running = False
+            self.draw()
+
+        pygame.quit()
+
+    def handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != 'DOWN':
+                    self.snake.direction = 'UP'
+                elif event.key == pygame.K_DOWN and self.snake.direction != 'UP':
+                    self.snake.direction = 'DOWN'
+                elif event.key == pygame.K_LEFT and self.snake.direction != 'RIGHT':
+                    self.snake.direction = 'LEFT'
+                elif event.key == pygame.K_RIGHT and self.snake.direction != 'LEFT':
+                    self.snake.direction = 'RIGHT'
+
+    def update(self) -> bool:
+        self.snake.move()
+
+        # Check if snake eats food
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            self.food.generate_random_position()
+            self.score += 1
+
+        return not self.snake.check_collision()
+
+    def draw(self) -> None:
+        self.screen.fill((0, 0, 0))
+
+        # Draw snake
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(segment[0], segment[1], 10, 10))
+
+        # Draw food
+        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food.position[0], self.food.position[1], 10, 10))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+        self.clock.tick(15)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
+
+```
+
+## Code Review: snake_game.py
+1. Yes, the code is implemented as per the requirements. It includes all necessary components for a basic snake game: snake movement, food generation, collision detection, score tracking, and a game loop.
+
+2. The code logic is mostly correct, but there are some potential improvements:
+   - In `Snake.check_collision()`, we should add a check to ensure that the screen size (800x600) is not hardcoded within the method. It would be better to pass the screen dimensions as parameters or access them from the `SnakeGame` class.
+   - The food generation in `Food.generate_random_position()` uses fixed values for grid size, which might not match the actual game window if it changes.
+
+3. Yes, the existing code follows the "Data structures and interfaces" specified in the system design.
+
+4. All functions are implemented as per the requirements:
+   - Snake class has methods: `__init__`, `move`, `grow`, `check_collision`
+   - Food class has methods: `__init__`, `generate_random_position`
+   - SnakeGame class has methods: `__init__`, `run`, `handle_events`, `update`, `draw`
+
+5. Yes, all necessary pre-dependencies have been imported:
+   - `pygame` for graphics and user input handling
+   - `random` for generating random food positions
+   - `typing.List` and `typing.Tuple` for type annotations
+
+6. The methods from other files are not being reused as there are no external dependencies or shared methods across different files.
+
+## Actions
+1. Refactor the collision detection in `Snake.check_collision()` to use screen dimensions from the `SnakeGame` class.
+   ```python
+   def check_collision(self, screen_width: int = 800, screen_height: int = 600) -> bool:
+       # Check collision with itself
+       if self.body[0] in self.body[1:]:
+           return True
+
+       # Check collision with walls (using passed parameters)
+       head_x, head_y = self.body[0]
+       if head_x < 0 or head_x >= screen_width or head_y < 0 or head_y >= screen_height:
+           return True
+
+       return False
+   ```
+
+2. Update the `SnakeGame` class to pass screen dimensions when checking for collisions.
+   ```python
+   def update(self) -> bool:
+       self.snake.move()
+
+       # Check if snake eats food
+       if self.snake.body[0] == self.food.position:
+           self.snake.grow()
+           self.food.generate_random_position()
+           self.score += 1
+
+       return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+   ```
+
+3. Refactor the food generation in `Food.generate_random_position()` to use dynamic grid size based on screen dimensions.
+   ```python
+   def generate_random_position(self, grid_width: int = 80, grid_height: int = 60) -> None:
+       self.position = (random.randint(0, grid_width - 1) * 10, random.randint(0, grid_height - 1) * 10)
+   ```
+
+4. Update the `SnakeGame` class to pass grid dimensions when generating food position.
+   ```python
+   def __init__(self):
+       pygame.init()
+       self.screen = pygame.display.set_mode((800, 600))
+       pygame.display.set_caption('Snake Game')
+       self.clock = pygame.time.Clock()
+
+       self.snake = Snake()
+       self.food = Food()
+       self.score: int = 0
+
+   def update(self) -> bool:
+       self.snake.move()
+
+       # Check if snake eats food
+       if self.snake.body[0] == self.food.position:
+           self.snake.grow()
+           grid_width = self.screen.get_width() // 10
+           grid_height = self.screen.get_height() // 10
+           self.food.generate_random_position(grid_width, grid_height)
+           self.score += 1
+
+       return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+   ```
+
+## Code Review Result
+LBTM
+
+# Instruction: rewrite code based on the Code Review and Actions
+## Rewrite Code: CodeBlock. If it still has some bugs, rewrite snake_game.py with triple quotes. Do your utmost to optimize THIS SINGLE FILE. Return all completed codes and prohibit the return of unfinished codes.
+```Code
+## snake_game.py
+...
+```
+
+
+
+
+
+# System
+Role: You are a professional software engineer, and your main task is to review and revise the code. You need to ensure that the code conforms to the google-style standards, is elegantly designed and modularized, easy to read and maintain.
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## System Design
+{"Implementation approach":"We will implement a simple snake game using Python with Pygame library for graphics and user input handling. The game will feature basic snake movement, food generation, collision detection, score tracking, and a game over screen with restart functionality.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclassDiagram\n    class SnakeGame {\n        -screen: Surface\n        -clock: Clock\n        -snake: List[Tuple[int, int]]\n        -direction: str\n        -food: Tuple[int, int]\n        -score: int\n        +__init__(self)\n        +run(self)\n        +handle_events(self)\n        +update(self)\n        +draw(self)\n    }\n    classDiagram\n    class Snake {\n        -body: List[Tuple[int, int]]\n        -direction: str\n        +__init__(self)\n        +move(self)\n        +grow(self)\n        +check_collision(self)\n    }\n    class Food {\n        -position: Tuple[int, int]\n        +__init__(self)\n        +generate_random_position(self)\n    }\n\n    SnakeGame --> Snake\n    SnakeGame --> Food\n","Program call flow":"\nsequenceDiagram\n    participant U as User\n    participant SG as SnakeGame\n    participant S as Snake\n    participant F as Food\n    U->>SG: Start game\n    SG->>S: Initialize snake\n    SG->>F: Generate food position\n    loop Game Loop\n        U->>SG: Handle events (key presses)\n        SG->>S: Update direction\n        S->>S: Move snake\n        S-->>SG: Return new head position\n        SG->>S: Check for collision with self or walls\n        alt Snake eats food\n            S->>F: Check if snake head at food position\n            F-->>S: Yes, return True\n            S->>S: Grow snake\n            SG->>F: Generate new food position\n        end\n        SG->>SG: Update score\n        SG->>SG: Draw game elements\n    end\n    alt Game Over\n        U->>SG: Handle events (key presses)\n        SG-->>U: Show game over screen with restart option\n    end\n","Anything UNCLEAR":""}
+
+## Task
+{"Required Python packages":["pygame==2.1.0"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class with methods to run the game, handle events, update game state, and draw graphics.","Contains Snake class for snake movement, growth, and collision detection.","Contains Food class for generating random food positions."],["main.py","Contains main function to initialize and start the SnakeGame."]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains classes shared across the project, including SnakeGame, Snake, and Food.","Anything UNCLEAR":""}
+
+## Code Files
+
+
+
+## Code to be Reviewed: snake_game.py
+```Code
+## snake_game.py
+
+import pygame
+import random
+from typing import List, Tuple
+
+class Snake:
+    def __init__(self):
+        self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+        self.direction: str = 'RIGHT'
+
+    def move(self) -> None:
+        head_x, head_y = self.body[0]
+        if self.direction == 'UP':
+            new_head = (head_x, head_y - 10)
+        elif self.direction == 'DOWN':
+            new_head = (head_x, head_y + 10)
+        elif self.direction == 'LEFT':
+            new_head = (head_x - 10, head_y)
+        elif self.direction == 'RIGHT':
+            new_head = (head_x + 10, head_y)
+
+        self.body.insert(0, new_head)
+        self.body.pop()
+
+    def grow(self) -> None:
+        self.body.append(self.body[-1])
+
+    def check_collision(self, screen_width: int = 800, screen_height: int = 600) -> bool:
+        # Check collision with itself
+        if self.body[0] in self.body[1:]:
+            return True
+
+        # Check collision with walls (using passed parameters)
+        head_x, head_y = self.body[0]
+        if head_x < 0 or head_x >= screen_width or head_y < 0 or head_y >= screen_height:
+            return True
+
+        return False
+
+class Food:
+    def __init__(self):
+        self.position: Tuple[int, int] = (0, 0)
+        self.generate_random_position()
+
+    def generate_random_position(self, grid_width: int = 80, grid_height: int = 60) -> None:
+        self.position = (random.randint(0, grid_width - 1) * 10, random.randint(0, grid_height - 1) * 10)
+
+class SnakeGame:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption('Snake Game')
+        self.clock = pygame.time.Clock()
+
+        self.snake = Snake()
+        self.food = Food()
+        self.score: int = 0
+
+    def run(self) -> None:
+        running = True
+        while running:
+            self.handle_events()
+            if not self.update():
+                running = False
+            self.draw()
+
+        pygame.quit()
+
+    def handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != 'DOWN':
+                    self.snake.direction = 'UP'
+                elif event.key == pygame.K_DOWN and self.snake.direction != 'UP':
+                    self.snake.direction = 'DOWN'
+                elif event.key == pygame.K_LEFT and self.snake.direction != 'RIGHT':
+                    self.snake.direction = 'LEFT'
+                elif event.key == pygame.K_RIGHT and self.snake.direction != 'LEFT':
+                    self.snake.direction = 'RIGHT'
+
+    def update(self) -> bool:
+        self.snake.move()
+
+        # Check if snake eats food
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            grid_width = self.screen.get_width() // 10
+            grid_height = self.screen.get_height() // 10
+            self.food.generate_random_position(grid_width, grid_height)
+            self.score += 1
+
+        return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+
+    def draw(self) -> None:
+        self.screen.fill((0, 0, 0))
+
+        # Draw snake
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(segment[0], segment[1], 10, 10))
+
+        # Draw food
+        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food.position[0], self.food.position[1], 10, 10))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+        self.clock.tick(15)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
+
+```
+
+
+
+# Format example 1
+## Code Review: snake_game.py
+1. No, we should fix the logic of class A due to ...
+2. ...
+3. ...
+4. No, function B is not implemented, ...
+5. ...
+6. ...
+
+## Actions
+1. Fix the `handle_events` method to update the game state only if a move is successful.
+   ```python
+   def handle_events(self):
+       for event in pygame.event.get():
+           if event.type == pygame.QUIT:
+               return False
+           if event.type == pygame.KEYDOWN:
+               moved = False
+               if event.key == pygame.K_UP:
+                   moved = self.game.move('UP')
+               elif event.key == pygame.K_DOWN:
+                   moved = self.game.move('DOWN')
+               elif event.key == pygame.K_LEFT:
+                   moved = self.game.move('LEFT')
+               elif event.key == pygame.K_RIGHT:
+                   moved = self.game.move('RIGHT')
+               if moved:
+                   # Update the game state only if a move was successful
+                   self.render()
+       return True
+   ```
+2. Implement function B
+
+## Code Review Result
+LBTM
+
+# Format example 2
+## Code Review: snake_game.py
+1. Yes.
+2. Yes.
+3. Yes.
+4. Yes.
+5. Yes.
+6. Yes.
+
+## Actions
+pass
+
+## Code Review Result
+LGTM
+
+
+
+# Instruction: Based on the actual code situation, follow one of the "Format example". Return only 1 file under review.
+
+## Code Review: Ordered List. Based on the "Code to be Reviewed", provide key, clear, concise, and specific answer. If any answer is no, explain how to fix it step by step.
+1. Is the code implemented as per the requirements? If not, how to achieve it? Analyse it step by step.
+2. Is the code logic completely correct? If there are errors, please indicate how to correct them.
+3. Does the existing code follow the "Data structures and interfaces"?
+4. Are all functions implemented? If there is no implementation, please indicate how to achieve it step by step.
+5. Have all necessary pre-dependencies been imported? If not, indicate which ones need to be imported
+6. Are methods from other files being reused correctly?
+
+## Actions: Ordered List. Things that should be done after CR, such as implementing class A and function B
+
+## Code Review Result: str. If the code doesn't have bugs, we don't need to rewrite it, so answer LGTM and stop. ONLY ANSWER LGTM/LBTM.
+LGTM/LBTM
+
+
+
+
+
+
+# System
+Role: You are a professional software engineer, and your main task is to review and revise the code. You need to ensure that the code conforms to the google-style standards, is elegantly designed and modularized, easy to read and maintain.
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## System Design
+{"Implementation approach":"We will implement a simple snake game using Python with Pygame library for graphics and user input handling. The game will feature basic snake movement, food generation, collision detection, score tracking, and a game over screen with restart functionality.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclassDiagram\n    class SnakeGame {\n        -screen: Surface\n        -clock: Clock\n        -snake: List[Tuple[int, int]]\n        -direction: str\n        -food: Tuple[int, int]\n        -score: int\n        +__init__(self)\n        +run(self)\n        +handle_events(self)\n        +update(self)\n        +draw(self)\n    }\n    classDiagram\n    class Snake {\n        -body: List[Tuple[int, int]]\n        -direction: str\n        +__init__(self)\n        +move(self)\n        +grow(self)\n        +check_collision(self)\n    }\n    class Food {\n        -position: Tuple[int, int]\n        +__init__(self)\n        +generate_random_position(self)\n    }\n\n    SnakeGame --> Snake\n    SnakeGame --> Food\n","Program call flow":"\nsequenceDiagram\n    participant U as User\n    participant SG as SnakeGame\n    participant S as Snake\n    participant F as Food\n    U->>SG: Start game\n    SG->>S: Initialize snake\n    SG->>F: Generate food position\n    loop Game Loop\n        U->>SG: Handle events (key presses)\n        SG->>S: Update direction\n        S->>S: Move snake\n        S-->>SG: Return new head position\n        SG->>S: Check for collision with self or walls\n        alt Snake eats food\n            S->>F: Check if snake head at food position\n            F-->>S: Yes, return True\n            S->>S: Grow snake\n            SG->>F: Generate new food position\n        end\n        SG->>SG: Update score\n        SG->>SG: Draw game elements\n    end\n    alt Game Over\n        U->>SG: Handle events (key presses)\n        SG-->>U: Show game over screen with restart option\n    end\n","Anything UNCLEAR":""}
+
+## Task
+{"Required Python packages":["pygame==2.1.0"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class with methods to run the game, handle events, update game state, and draw graphics.","Contains Snake class for snake movement, growth, and collision detection.","Contains Food class for generating random food positions."],["main.py","Contains main function to initialize and start the SnakeGame."]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains classes shared across the project, including SnakeGame, Snake, and Food.","Anything UNCLEAR":""}
+
+## Code Files
+
+
+
+## Code to be Reviewed: snake_game.py
+```Code
+## snake_game.py
+
+import pygame
+import random
+from typing import List, Tuple
+
+class Snake:
+    def __init__(self):
+        self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+        self.direction: str = 'RIGHT'
+
+    def move(self) -> None:
+        head_x, head_y = self.body[0]
+        if self.direction == 'UP':
+            new_head = (head_x, head_y - 10)
+        elif self.direction == 'DOWN':
+            new_head = (head_x, head_y + 10)
+        elif self.direction == 'LEFT':
+            new_head = (head_x - 10, head_y)
+        elif self.direction == 'RIGHT':
+            new_head = (head_x + 10, head_y)
+
+        self.body.insert(0, new_head)
+        self.body.pop()
+
+    def grow(self) -> None:
+        self.body.append(self.body[-1])
+
+    def check_collision(self, screen_width: int = 800, screen_height: int = 600) -> bool:
+        # Check collision with itself
+        if self.body[0] in self.body[1:]:
+            return True
+
+        # Check collision with walls (using passed parameters)
+        head_x, head_y = self.body[0]
+        if head_x < 0 or head_x >= screen_width or head_y < 0 or head_y >= screen_height:
+            return True
+
+        return False
+
+class Food:
+    def __init__(self):
+        self.position: Tuple[int, int] = (0, 0)
+        self.generate_random_position()
+
+    def generate_random_position(self, grid_width: int = 80, grid_height: int = 60) -> None:
+        self.position = (random.randint(0, grid_width - 1) * 10, random.randint(0, grid_height - 1) * 10)
+
+class SnakeGame:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption('Snake Game')
+        self.clock = pygame.time.Clock()
+
+        self.snake = Snake()
+        self.food = Food()
+        self.score: int = 0
+
+    def run(self) -> None:
+        running = True
+        while running:
+            self.handle_events()
+            if not self.update():
+                running = False
+            self.draw()
+
+        pygame.quit()
+
+    def handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != 'DOWN':
+                    self.snake.direction = 'UP'
+                elif event.key == pygame.K_DOWN and self.snake.direction != 'UP':
+                    self.snake.direction = 'DOWN'
+                elif event.key == pygame.K_LEFT and self.snake.direction != 'RIGHT':
+                    self.snake.direction = 'LEFT'
+                elif event.key == pygame.K_RIGHT and self.snake.direction != 'LEFT':
+                    self.snake.direction = 'RIGHT'
+
+    def update(self) -> bool:
+        self.snake.move()
+
+        # Check if snake eats food
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            grid_width = self.screen.get_width() // 10
+            grid_height = self.screen.get_height() // 10
+            self.food.generate_random_position(grid_width, grid_height)
+            self.score += 1
+
+        return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+
+    def draw(self) -> None:
+        self.screen.fill((0, 0, 0))
+
+        # Draw snake
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(segment[0], segment[1], 10, 10))
+
+        # Draw food
+        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food.position[0], self.food.position[1], 10, 10))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+        self.clock.tick(15)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
+
+```
+
+## Code Review: snake_game.py
+1. Is the code implemented as per the requirements? If not, how to achieve it? Analyse it step by step.
+   - Yes, the code is implemented according to the requirements. It includes basic snake movement, food generation, collision detection, score tracking, and a game loop with event handling.
+
+2. Is the code logic completely correct? If there are errors, please indicate how to correct them.
+   - The overall logic appears correct but there are some improvements that can be made:
+     1. In the `Snake.move` method, it would be better to use constants for direction changes instead of magic strings like 'UP', 'DOWN', etc.
+     2. The `Food.generate_random_position` method should ensure food doesn't spawn on the snake's body.
+
+3. Does the existing code follow the "Data structures and interfaces"?
+   - Yes, the code follows the data structures and interfaces described in the system design. It includes a `SnakeGame` class with methods to run the game, handle events, update the game state, and draw graphics. The `Snake` and `Food` classes are also implemented as specified.
+
+4. Are all functions implemented? If there is no implementation, please indicate how to achieve it step by step.
+   - Yes, all required functions are implemented in the code.
+
+5. Have all necessary pre-dependencies been imported? If not, indicate which ones need to be imported
+   - All necessary dependencies (`pygame`, `random`) have been imported correctly.
+
+6. Are methods from other files being reused correctly?
+   - There are no external file dependencies in this code snippet, so this point is not applicable.
+
+## Actions
+1. Improve the direction handling in the `Snake.move` method by using constants.
+2. Modify the `Food.generate_random_position` method to ensure food doesn't spawn on the snake's body.
+   ```python
+   class Snake:
+       UP = 'UP'
+       DOWN = 'DOWN'
+       LEFT = 'LEFT'
+       RIGHT = 'RIGHT'
+
+       def __init__(self):
+           self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+           self.direction: str = Snake.RIGHT
+
+   class Food:
+       def generate_random_position(self, grid_width: int = 80, grid_height: int = 60, snake_body: List[Tuple[int, int]] = []) -> None:
+           while True:
+               position = (random.randint(0, grid_width - 1) * 10, random.randint(0, grid_height - 1) * 10)
+               if position not in snake_body:
+                   self.position = position
+                   break
+
+   class SnakeGame:
+       def update(self) -> bool:
+           self.snake.move()
+
+           # Check if snake eats food
+           if self.snake.body[0] == self.food.position:
+               self.snake.grow()
+               grid_width = self.screen.get_width() // 10
+               grid_height = self.screen.get_height() // 10
+               self.food.generate_random_position(grid_width, grid_height, self.snake.body)
+               self.score += 1
+
+           return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+   ```
+
+## Code Review Result
+LBTM
+
+# Instruction: rewrite code based on the Code Review and Actions
+## Rewrite Code: CodeBlock. If it still has some bugs, rewrite snake_game.py with triple quotes. Do your utmost to optimize THIS SINGLE FILE. Return all completed codes and prohibit the return of unfinished codes.
+```Code
+## snake_game.py
+...
+```
+
+
+
+
+
+NOTICE
+Role: You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## Design
+{"Implementation approach":"We will implement a simple snake game using Python with Pygame library for graphics and user input handling. The game will feature basic snake movement, food generation, collision detection, score tracking, and a game over screen with restart functionality.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclassDiagram\n    class SnakeGame {\n        -screen: Surface\n        -clock: Clock\n        -snake: List[Tuple[int, int]]\n        -direction: str\n        -food: Tuple[int, int]\n        -score: int\n        +__init__(self)\n        +run(self)\n        +handle_events(self)\n        +update(self)\n        +draw(self)\n    }\n    classDiagram\n    class Snake {\n        -body: List[Tuple[int, int]]\n        -direction: str\n        +__init__(self)\n        +move(self)\n        +grow(self)\n        +check_collision(self)\n    }\n    class Food {\n        -position: Tuple[int, int]\n        +__init__(self)\n        +generate_random_position(self)\n    }\n\n    SnakeGame --> Snake\n    SnakeGame --> Food\n","Program call flow":"\nsequenceDiagram\n    participant U as User\n    participant SG as SnakeGame\n    participant S as Snake\n    participant F as Food\n    U->>SG: Start game\n    SG->>S: Initialize snake\n    SG->>F: Generate food position\n    loop Game Loop\n        U->>SG: Handle events (key presses)\n        SG->>S: Update direction\n        S->>S: Move snake\n        S-->>SG: Return new head position\n        SG->>S: Check for collision with self or walls\n        alt Snake eats food\n            S->>F: Check if snake head at food position\n            F-->>S: Yes, return True\n            S->>S: Grow snake\n            SG->>F: Generate new food position\n        end\n        SG->>SG: Update score\n        SG->>SG: Draw game elements\n    end\n    alt Game Over\n        U->>SG: Handle events (key presses)\n        SG-->>U: Show game over screen with restart option\n    end\n","Anything UNCLEAR":""}
+
+## Task
+{"Required Python packages":["pygame==2.1.0"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class with methods to run the game, handle events, update game state, and draw graphics.","Contains Snake class for snake movement, growth, and collision detection.","Contains Food class for generating random food positions."],["main.py","Contains main function to initialize and start the SnakeGame."]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains classes shared across the project, including SnakeGame, Snake, and Food.","Anything UNCLEAR":""}
+
+## Legacy Code
+```Code
+----- snake_game.py
+```import pygame
+import random
+from typing import List, Tuple
+
+class Snake:
+    UP = 'UP'
+    DOWN = 'DOWN'
+    LEFT = 'LEFT'
+    RIGHT = 'RIGHT'
+
+    def __init__(self):
+        self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+        self.direction: str = Snake.RIGHT
+
+    def move(self) -> None:
+        head_x, head_y = self.body[0]
+        if self.direction == Snake.UP:
+            new_head = (head_x, head_y - 10)
+        elif self.direction == Snake.DOWN:
+            new_head = (head_x, head_y + 10)
+        elif self.direction == Snake.LEFT:
+            new_head = (head_x - 10, head_y)
+        elif self.direction == Snake.RIGHT:
+            new_head = (head_x + 10, head_y)
+
+        self.body.insert(0, new_head)
+        self.body.pop()
+
+    def grow(self) -> None:
+        self.body.append(self.body[-1])
+
+    def check_collision(self, screen_width: int = 800, screen_height: int = 600) -> bool:
+        # Check collision with itself
+        if self.body[0] in self.body[1:]:
+            return True
+
+        # Check collision with walls (using passed parameters)
+        head_x, head_y = self.body[0]
+        if head_x < 0 or head_x >= screen_width or head_y < 0 or head_y >= screen_height:
+            return True
+
+        return False
+
+class Food:
+    def __init__(self):
+        self.position: Tuple[int, int] = (0, 0)
+        self.generate_random_position()
+
+    def generate_random_position(self, grid_width: int = 80, grid_height: int = 60, snake_body: List[Tuple[int, int]] = []) -> None:
+        while True:
+            position = (random.randint(0, grid_width - 1) * 10, random.randint(0, grid_height - 1) * 10)
+            if position not in snake_body:
+                self.position = position
+                break
+
+class SnakeGame:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption('Snake Game')
+        self.clock = pygame.time.Clock()
+
+        self.snake = Snake()
+        self.food = Food()
+        self.score: int = 0
+
+    def run(self) -> None:
+        running = True
+        while running:
+            self.handle_events()
+            if not self.update():
+                running = False
+            self.draw()
+
+        pygame.quit()
+
+    def handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != Snake.DOWN:
+                    self.snake.direction = Snake.UP
+                elif event.key == pygame.K_DOWN and self.snake.direction != Snake.UP:
+                    self.snake.direction = Snake.DOWN
+                elif event.key == pygame.K_LEFT and self.snake.direction != Snake.RIGHT:
+                    self.snake.direction = Snake.LEFT
+                elif event.key == pygame.K_RIGHT and self.snake.direction != Snake.LEFT:
+                    self.snake.direction = Snake.RIGHT
+
+    def update(self) -> bool:
+        self.snake.move()
+
+        # Check if snake eats food
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            grid_width = self.screen.get_width() // 10
+            grid_height = self.screen.get_height() // 10
+            self.food.generate_random_position(grid_width, grid_height, self.snake.body)
+            self.score += 1
+
+        return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+
+    def draw(self) -> None:
+        self.screen.fill((0, 0, 0))
+
+        # Draw snake
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(segment[0], segment[1], 10, 10))
+
+        # Draw food
+        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food.position[0], self.food.position[1], 10, 10))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+        self.clock.tick(15)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
+```
+```
+
+## Debug logs
+```text
+
+
+
+```
+
+## Bug Feedback logs
+```text
+
+```
+
+# Format example
+## Code: main.py
+```python
+## main.py
+...
+```
+
+# Instruction: Based on the context, follow "Format example", write code.
+
+## Code: main.py. Write code with triple quoto, based on the following attentions and context.
+1. Only One file: do your best to implement THIS ONLY ONE FILE.
+2. COMPLETE CODE: Your code will be part of the entire project, so please implement complete, reliable, reusable code snippets.
+3. Set default value: If there is any setting, ALWAYS SET A DEFAULT VALUE, ALWAYS USE STRONG TYPE AND EXPLICIT VARIABLE. AVOID circular import.
+4. Follow design: YOU MUST FOLLOW "Data structures and interfaces". DONT CHANGE ANY DESIGN. Do not use public member functions that do not exist in your design.
+5. CAREFULLY CHECK THAT YOU DONT MISS ANY NECESSARY CLASS/FUNCTION IN THIS FILE.
+6. Before using a external variable/module, make sure you import it first.
+7. Write out EVERY CODE DETAIL, DON'T LEAVE TODO.
+
+
+
+
+
+
+# System
+Role: You are a professional software engineer, and your main task is to review and revise the code. You need to ensure that the code conforms to the google-style standards, is elegantly designed and modularized, easy to read and maintain.
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## System Design
+{"Implementation approach":"We will implement a simple snake game using Python with Pygame library for graphics and user input handling. The game will feature basic snake movement, food generation, collision detection, score tracking, and a game over screen with restart functionality.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclassDiagram\n    class SnakeGame {\n        -screen: Surface\n        -clock: Clock\n        -snake: List[Tuple[int, int]]\n        -direction: str\n        -food: Tuple[int, int]\n        -score: int\n        +__init__(self)\n        +run(self)\n        +handle_events(self)\n        +update(self)\n        +draw(self)\n    }\n    classDiagram\n    class Snake {\n        -body: List[Tuple[int, int]]\n        -direction: str\n        +__init__(self)\n        +move(self)\n        +grow(self)\n        +check_collision(self)\n    }\n    class Food {\n        -position: Tuple[int, int]\n        +__init__(self)\n        +generate_random_position(self)\n    }\n\n    SnakeGame --> Snake\n    SnakeGame --> Food\n","Program call flow":"\nsequenceDiagram\n    participant U as User\n    participant SG as SnakeGame\n    participant S as Snake\n    participant F as Food\n    U->>SG: Start game\n    SG->>S: Initialize snake\n    SG->>F: Generate food position\n    loop Game Loop\n        U->>SG: Handle events (key presses)\n        SG->>S: Update direction\n        S->>S: Move snake\n        S-->>SG: Return new head position\n        SG->>S: Check for collision with self or walls\n        alt Snake eats food\n            S->>F: Check if snake head at food position\n            F-->>S: Yes, return True\n            S->>S: Grow snake\n            SG->>F: Generate new food position\n        end\n        SG->>SG: Update score\n        SG->>SG: Draw game elements\n    end\n    alt Game Over\n        U->>SG: Handle events (key presses)\n        SG-->>U: Show game over screen with restart option\n    end\n","Anything UNCLEAR":""}
+
+## Task
+{"Required Python packages":["pygame==2.1.0"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class with methods to run the game, handle events, update game state, and draw graphics.","Contains Snake class for snake movement, growth, and collision detection.","Contains Food class for generating random food positions."],["main.py","Contains main function to initialize and start the SnakeGame."]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains classes shared across the project, including SnakeGame, Snake, and Food.","Anything UNCLEAR":""}
+
+## Code Files
+----- snake_game.py
+```import pygame
+import random
+from typing import List, Tuple
+
+class Snake:
+    UP = 'UP'
+    DOWN = 'DOWN'
+    LEFT = 'LEFT'
+    RIGHT = 'RIGHT'
+
+    def __init__(self):
+        self.body: List[Tuple[int, int]] = [(100, 100), (90, 100), (80, 100)]
+        self.direction: str = Snake.RIGHT
+
+    def move(self) -> None:
+        head_x, head_y = self.body[0]
+        if self.direction == Snake.UP:
+            new_head = (head_x, head_y - 10)
+        elif self.direction == Snake.DOWN:
+            new_head = (head_x, head_y + 10)
+        elif self.direction == Snake.LEFT:
+            new_head = (head_x - 10, head_y)
+        elif self.direction == Snake.RIGHT:
+            new_head = (head_x + 10, head_y)
+
+        self.body.insert(0, new_head)
+        self.body.pop()
+
+    def grow(self) -> None:
+        self.body.append(self.body[-1])
+
+    def check_collision(self, screen_width: int = 800, screen_height: int = 600) -> bool:
+        # Check collision with itself
+        if self.body[0] in self.body[1:]:
+            return True
+
+        # Check collision with walls (using passed parameters)
+        head_x, head_y = self.body[0]
+        if head_x < 0 or head_x >= screen_width or head_y < 0 or head_y >= screen_height:
+            return True
+
+        return False
+
+class Food:
+    def __init__(self):
+        self.position: Tuple[int, int] = (0, 0)
+        self.generate_random_position()
+
+    def generate_random_position(self, grid_width: int = 80, grid_height: int = 60, snake_body: List[Tuple[int, int]] = []) -> None:
+        while True:
+            position = (random.randint(0, grid_width - 1) * 10, random.randint(0, grid_height - 1) * 10)
+            if position not in snake_body:
+                self.position = position
+                break
+
+class SnakeGame:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((800, 600))
+        pygame.display.set_caption('Snake Game')
+        self.clock = pygame.time.Clock()
+
+        self.snake = Snake()
+        self.food = Food()
+        self.score: int = 0
+
+    def run(self) -> None:
+        running = True
+        while running:
+            self.handle_events()
+            if not self.update():
+                running = False
+            self.draw()
+
+        pygame.quit()
+
+    def handle_events(self) -> None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP and self.snake.direction != Snake.DOWN:
+                    self.snake.direction = Snake.UP
+                elif event.key == pygame.K_DOWN and self.snake.direction != Snake.UP:
+                    self.snake.direction = Snake.DOWN
+                elif event.key == pygame.K_LEFT and self.snake.direction != Snake.RIGHT:
+                    self.snake.direction = Snake.LEFT
+                elif event.key == pygame.K_RIGHT and self.snake.direction != Snake.LEFT:
+                    self.snake.direction = Snake.RIGHT
+
+    def update(self) -> bool:
+        self.snake.move()
+
+        # Check if snake eats food
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            grid_width = self.screen.get_width() // 10
+            grid_height = self.screen.get_height() // 10
+            self.food.generate_random_position(grid_width, grid_height, self.snake.body)
+            self.score += 1
+
+        return not self.snake.check_collision(self.screen.get_width(), self.screen.get_height())
+
+    def draw(self) -> None:
+        self.screen.fill((0, 0, 0))
+
+        # Draw snake
+        for segment in self.snake.body:
+            pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(segment[0], segment[1], 10, 10))
+
+        # Draw food
+        pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(self.food.position[0], self.food.position[1], 10, 10))
+
+        # Draw score
+        font = pygame.font.SysFont(None, 36)
+        text = font.render(f'Score: {self.score}', True, (255, 255, 255))
+        self.screen.blit(text, (10, 10))
+
+        pygame.display.flip()
+        self.clock.tick(15)
+
+if __name__ == "__main__":
+    game = SnakeGame()
+    game.run()
+```
+
+
+## Code to be Reviewed: main.py
+```Code
+"""
+Main entry point for the Snake Game application.
+This module initializes and starts the game by creating an instance of SnakeGame.
+"""
+
+from snake_game import SnakeGame
+
+def main() -> None:
+    """
+    Main function to initialize and start the SnakeGame.
+    """
+    game = SnakeGame()
+    game.run()
+
+if __name__ == "__main__":
+    main()
+
+```
+
+
+
+# Format example 1
+## Code Review: main.py
+1. No, we should fix the logic of class A due to ...
+2. ...
+3. ...
+4. No, function B is not implemented, ...
+5. ...
+6. ...
+
+## Actions
+1. Fix the `handle_events` method to update the game state only if a move is successful.
+   ```python
+   def handle_events(self):
+       for event in pygame.event.get():
+           if event.type == pygame.QUIT:
+               return False
+           if event.type == pygame.KEYDOWN:
+               moved = False
+               if event.key == pygame.K_UP:
+                   moved = self.game.move('UP')
+               elif event.key == pygame.K_DOWN:
+                   moved = self.game.move('DOWN')
+               elif event.key == pygame.K_LEFT:
+                   moved = self.game.move('LEFT')
+               elif event.key == pygame.K_RIGHT:
+                   moved = self.game.move('RIGHT')
+               if moved:
+                   # Update the game state only if a move was successful
+                   self.render()
+       return True
+   ```
+2. Implement function B
+
+## Code Review Result
+LBTM
+
+# Format example 2
+## Code Review: main.py
+1. Yes.
+2. Yes.
+3. Yes.
+4. Yes.
+5. Yes.
+6. Yes.
+
+## Actions
+pass
+
+## Code Review Result
+LGTM
+
+
+
+# Instruction: Based on the actual code situation, follow one of the "Format example". Return only 1 file under review.
+
+## Code Review: Ordered List. Based on the "Code to be Reviewed", provide key, clear, concise, and specific answer. If any answer is no, explain how to fix it step by step.
+1. Is the code implemented as per the requirements? If not, how to achieve it? Analyse it step by step.
+2. Is the code logic completely correct? If there are errors, please indicate how to correct them.
+3. Does the existing code follow the "Data structures and interfaces"?
+4. Are all functions implemented? If there is no implementation, please indicate how to achieve it step by step.
+5. Have all necessary pre-dependencies been imported? If not, indicate which ones need to be imported
+6. Are methods from other files being reused correctly?
+
+## Actions: Ordered List. Things that should be done after CR, such as implementing class A and function B
+
+## Code Review Result: str. If the code doesn't have bugs, we don't need to rewrite it, so answer LGTM and stop. ONLY ANSWER LGTM/LBTM.
+LGTM/LBTM
+
+
+
+
+

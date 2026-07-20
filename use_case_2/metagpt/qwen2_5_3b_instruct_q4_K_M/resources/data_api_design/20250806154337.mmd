@@ -1,0 +1,48 @@
+
+class User:
+    def __init__(self, id: int, username: str):
+        self.id = id
+        self.username = username
+
+
+class Ticket:
+    def __init__(self, id: int, user_id: int, title: str, description: str, status: str):
+        self.id = id
+        self.user_id = user_id
+        self.title = title
+        self.description = description
+        self.status = status
+
+
+class TicketReport:
+    def __init__(self, ticket_id: int, reporter_user_id: int, reported_at: datetime):
+        self.ticket_id = ticket_id
+        self.reporter_user_id = reporter_user_id
+        self.reported_at = reported_at
+
+
+class HelpdeskStaff:
+    def __init__(self, id: int, username: str):
+        self.id = id
+        self.username = username
+
+
+class TicketStatusChange:
+    def __init__(self, ticket_id: int, status_change: str, change_by_user_id: int, change_at: datetime):
+        self.ticket_id = ticket_id
+        self.status_change = status_change
+        self.change_by_user_id = change_by_user_id
+        self.change_at = change_at
+
+
+class Analytics:
+    def __init__(self, data: dict):
+        self.data = data
+
+    @staticmethod
+    def get_open_tickets_count(data: dict) -> int:
+        return len([ticket for ticket in data if ticket['status'] == 'open'])
+
+    @staticmethod
+    def get_closed_tickets_count(data: dict) -> int:
+        return len([ticket for ticket in data if ticket['status'] == 'closed'])

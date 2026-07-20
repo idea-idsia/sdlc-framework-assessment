@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tickets</title>
+</head>
+<body>
+    <h1>Tickets</h1>
+    {% if user_type == 'user' %}
+        <form method="post">
+            <textarea name="description" placeholder="Description"></textarea><br>
+            <select name="category">
+                <option value="facility_management">Facility Management</option>
+                <option value="technical_it">Technical IT</option>
+                <option value="services_complaints">Services Complaints</option>
+            </select><br>
+            <button type="submit">Create Ticket</button>
+        </form>
+    {% endif %}
+    <ul>
+        {% for ticket in tickets %}
+            <li>
+                <a href="{{ url_for('ticket', ticket_id=ticket.id, user_type=user_type) }}">{{ ticket.description }}</a> - {{ ticket.status }}
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

@@ -1,0 +1,2927 @@
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Product Owner. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+AgileCoder is using Agile Scrum for software development.
+You are responsible for maximizing the value delivered by the team by ensuring that the team backlog is aligned with customer and stakeholder needs.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Alright! To achieve our sprint goals, we'll break down the task into several key components and then implement them step-by-step.
+
+### Step 1: Identify Core Components
+
+We need to develop:
+
+1. **Login Page**: A simple GUI that allows users to select their role (helpdesk staff or simple user).
+2. **Ticket Management System for Simple Users**:
+    - Insert new tickets.
+    - View open and active tickets.
+3. **Database Integration**:
+    - Store ticket data, including descriptions, statuses, categories, opening dates, modification dates, and closing dates.
+4. **Basic Helpdesk Functionality** (Partially):
+    - View all tickets.
+
+### Step 2: Define Classes and Functions
+
+1. **Main Application Class**: To handle the main window and role selection.
+2. **Ticket Management GUI Class for Simple Users**: To manage ticket insertion and viewing.
+3. **Database Manager Class**: To interact with SQLite database (for simplicity).
+4. **Helpdesk Management GUI Class** (Partially): To view tickets.
+
+### Step 3: Outline File Structure
+
+1. `main.py`: Entry point, sets up the main application window and role selection.
+2. `ticket_management_simple_user.py`: Handles ticket creation and viewing for simple users.
+3. `database_manager.py`: Manages database operations.
+4. `helpdesk_management_gui.py`: Partial helpdesk user functionalities.
+
+### Step 4: Implementing the Code
+
+Let's start with `main.py`:
+
+#### main.py
+```python
+'''
+Main application entry point for role selection and initializing appropriate GUI.
+'''
+
+import tkinter as tk
+from ticket_management_simple_user import SimpleUserGUI
+from helpdesk_management_gui import HelpdeskManagementGUI  # Partial implementation
+
+def select_role(role):
+    root.destroy()
+    if role == 'simple':
+        simple_user_gui = SimpleUserGUI()
+    elif role == 'helpdesk':
+        helpdesk_gui = HelpdeskManagementGUI()
+
+root = tk.Tk()
+root.title("Ticket Management System")
+
+label = tk.Label(root, text="Select your role:")
+label.pack(pady=20)
+
+simple_button = tk.Button(root, text="Simple User", command=lambda: select_role('simple'))
+helpdesk_button = tk.Button(root, text="Helpdesk Staff", command=lambda: select_role('helpdesk'))
+
+simple_button.pack(padx=10)
+helpdesk_button.pack(padx=10)
+
+root.mainloop()
+```
+
+Next, let's create the file for simple user functionalities:
+
+#### ticket_management_simple_user.py
+```python
+'''
+Handles ticket creation and viewing for simple users.
+'''
+
+import tkinter as tk
+from database_manager import DatabaseManager
+
+class SimpleUserGUI:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Simple User Ticket Management")
+
+        self.db_manager = DatabaseManager()
+
+        create_button = tk.Button(self.root, text="Create New Ticket", command=self.create_ticket)
+        view_button = tk.Button(self.root, text="View My Tickets", command=self.view_tickets)
+
+        create_button.pack(pady=10)
+        view_button.pack(pady=10)
+
+        self.root.mainloop()
+
+    def create_ticket(self):
+        create_window = tk.Toplevel(self.root)
+        create_window.title("Create New Ticket")
+
+        description_label = tk.Label(create_window, text="Description:")
+        description_entry = tk.Entry(create_window, width=50)
+
+        category_label = tk.Label(create_window, text="Category (facility, IT, services):")
+        category_entry = tk.Entry(create_window, width=50)
+
+        submit_button = tk.Button(create_window, text="Submit", command=lambda: self.submit_ticket(description_entry.get(), category_entry.get()))
+
+        description_label.pack(pady=10)
+        description_entry.pack(pady=10)
+        category_label.pack(pady=10)
+        category_entry.pack(pady=10)
+        submit_button.pack(pady=20)
+
+    def submit_ticket(self, description, category):
+        self.db_manager.add_ticket(description, "open", category)
+        tk.messagebox.showinfo("Success", "Ticket created successfully")
+
+    def view_tickets(self):
+        tickets = self.db_manager.get_open_and_active_tickets()
+        view_window = tk.Toplevel(self.root)
+        view_window.title("My Tickets")
+
+        for ticket in tickets:
+            label = tk.Label(view_window, text=f"ID: {ticket[0]}, Description: {ticket[1]}, Status: {ticket[2]}")
+            label.pack(pady=5)
+
+if __name__ == "__main__":
+    SimpleUserGUI()
+```
+
+Next, let's create the database manager:
+
+#### database_manager.py
+```python
+'''
+Manages database operations for tickets.
+'''
+
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect('tickets.db')
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT,
+                status TEXT,
+                category TEXT,
+                opening_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                closing_date TIMESTAMP
+            )
+        ''')
+        self.conn.commit()
+
+    def add_ticket(self, description, status, category):
+        query = "INSERT INTO tickets (description, status, category) VALUES (?, ?, ?)"
+        self.cursor.execute(query, (description, status, category))
+        self.conn.commit()
+
+    def get_open_and_active_tickets(self):
+        query = "SELECT * FROM tickets WHERE status IN ('open', 'active')"
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def __del__(self):
+        self.conn.close()
+```
+
+Lastly, let's create the partial helpdesk management GUI:
+
+#### helpdesk_management_gui.py
+```python
+'''
+Partial implementation of helpdesk user functionalities.
+'''
+
+import tkinter as tk
+from database_manager import DatabaseManager
+
+class HelpdeskManagementGUI:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.root.title("Helpdesk Management")
+
+        self.db_manager = DatabaseManager()
+
+        view_button = tk.Button(self.root, text="View All Tickets", command=self.view_all_tickets)
+        view_button.pack(pady=20)
+
+        self.root.mainloop()
+
+    def view_all_tickets(self):
+        tickets = self.db_manager.get_open_and_active_tickets()
+        view_window = tk.Toplevel(self.root)
+        view_window.title("All Tickets")
+
+        for ticket in tickets:
+            label = tk.Label(view_window, text=f"ID: {ticket[0]}, Description: {ticket[1]}, Status: {ticket[2]}")
+            label.pack(pady=5)
+
+if __name__ == "__main__":
+    HelpdeskManagementGUI()
+```
+
+This should fulfill the requirements for the first sprint. The `main.py` handles role selection, and based on user choice, it launches either the simple user ticket management GUI or the partial helpdesk management GUI. `database_manager.py` is responsible for database operations, ensuring data persistence.
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+### Modified Codes
+
+**main.py**
+```python
+'''
+This file contains the main implementation for the Helpdesk Management GUI,
+including functionality for both simple users and helpdesk staff.
+'''
+import tkinter as tk
+from tkinter import messagebox, ttk
+from database_manager import DatabaseManager
+
+class TicketManagementGUI:
+    def __init__(self, user_type):
+        self.user_type = user_type
+        self.db_manager = DatabaseManager()
+        self.root = tk.Tk()
+        self.root.title("Ticket Management")
+        self.create_widgets()
+
+    def create_widgets(self):
+        if self.user_type == "user":
+            self.create_user_widgets()
+        elif self.user_type == "helpdesk":
+            self.create_helpdesk_widgets()
+
+    def create_user_widgets(self):
+        tk.Label(self.root, text="Description:").pack(pady=5)
+        self.description_entry = tk.Entry(self.root)
+        self.description_entry.pack(pady=5)
+
+        tk.Label(self.root, text="Category:").pack(pady=5)
+        category_options = ["facility management", "technical IT", "services complaints"]
+        self.category_var = ttk.Combobox(self.root, values=category_options)
+        self.category_var.pack(pady=5)
+
+        insert_button = tk.Button(self.root, text="Insert Ticket", command=self.insert_ticket)
+        insert_button.pack(pady=10)
+
+        view_button = tk.Button(self.root, text="View My Tickets", command=self.view_user_tickets)
+        view_button.pack(pady=20)
+
+    def create_helpdesk_widgets(self):
+        view_all_button = tk.Button(self.root, text="View All Tickets", command=self.view_all_tickets)
+        view_all_button.pack(pady=20)
+
+    def insert_ticket(self):
+        description = self.description_entry.get()
+        category = self.category_var.get()
+
+        if not description or not category:
+            messagebox.showerror("Error", "Both fields are required")
+            return
+
+        try:
+            user_id = 1
+            self.db_manager.add_ticket(description, "open", category, user_id)
+            messagebox.showinfo("Success", "Ticket inserted successfully!")
+        except Exception as e:
+            messagebox.showerror("Database Error", f"An error occurred: {e}")
+
+    def view_all_tickets(self):
+        tickets = self.db_manager.get_open_and_active_tickets()
+        self.display_tickets(tickets)
+
+    def view_user_tickets(self):
+        user_id = 1
+        tickets = self.db_manager.get_open_and_active_tickets(user_id)
+        self.display_tickets(tickets)
+
+    def display_tickets(self, tickets):
+        if not tickets:
+            messagebox.showinfo("Info", "No tickets to display.")
+            return
+
+        view_window = tk.Toplevel(self.root)
+        view_window.title("Tickets")
+        for ticket in tickets:
+            label = tk.Label(view_window, text=f"ID: {ticket[0]}, Description: {ticket[1]}, Status: {ticket[2]}")
+            label.pack(pady=5)
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    user_type = input("Enter 'helpdesk' or 'user': ")  # For simplicity in this example
+    if user_type not in ["helpdesk", "user"]:
+        print("Invalid user type. Exiting.")
+        exit()
+    app = TicketManagementGUI(user_type)
+    app.run()
+
+```
+
+**database_manager.py**
+```python
+'''
+This file contains the database manager implementation, responsible for creating tables,
+inserting tickets, and fetching tickets based on criteria.
+'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect('tickets.db')
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+        """Creates necessary tables in the database."""
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT,
+                role TEXT
+            )
+        ''')
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT,
+                status TEXT,
+                category TEXT,
+                opening_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                closing_date TIMESTAMP,
+                user_id INTEGER
+            )
+        ''')
+        self.conn.commit()
+
+    def add_ticket(self, description, status, category, user_id):
+        """Adds a new ticket to the database."""
+        try:
+            query = "INSERT INTO tickets (description, status, category, user_id) VALUES (?, ?, ?, ?)"
+            self.cursor.execute(query, (description, status, category, user_id))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            raise Exception(f"An error occurred while adding a ticket: {e}")
+
+    def get_open_and_active_tickets(self, user_id=None):
+        """Retrieves all open and active tickets from the database,
+           optionally filtered by a specific user's ID."""
+        query = "SELECT * FROM tickets WHERE status IN ('open', 'active')"
+        params = []
+        if user_id:
+            query += " AND user_id = ?"
+            params.append(user_id)
+        self.cursor.execute(query, params)
+        return self.cursor.fetchall()
+
+    def __del__(self):
+        """Ensures the database connection is closed when the object is destroyed."""
+        self.conn.close()
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+To meet your requirement, I will rearrange the provided Python code into the specified format. Here's how it should look:
+
+### main.py
+```python
+'''
+This file contains the main implementation for the Helpdesk Management GUI,
+including functionality for both simple users and helpdesk staff.
+'''
+import tkinter as tk
+from tkinter import simpledialog, messagebox
+from database_manager import DatabaseManager
+
+class TicketManagementGUI:
+    def __init__(self, user_type):
+        self.user_type = user_type
+        self.db_manager = DatabaseManager()
+        self.root = tk.Tk()
+        self.root.title("Ticket Management")
+        self.create_widgets()
+
+    def create_widgets(self):
+        if self.user_type == "user":
+            self.create_user_widgets()
+        elif self.user_type == "helpdesk":
+            self.create_helpdesk_widgets()
+
+    def create_user_widgets(self):
+        tk.Label(self.root, text="Description:").pack(pady=5)
+        self.description_entry = tk.Entry(self.root)
+        self.description_entry.pack(pady=5)
+        tk.Label(self.root, text="Category:").pack(pady=5)
+        self.category_var = tk.StringVar()
+        category_menu = tk.OptionMenu(
+            self.root,
+            self.category_var,
+            "facility management", "technical IT", "services complaints"
+        )
+        category_menu.pack(pady=5)
+        tk.Button(self.root, text="Insert Ticket", command=self.insert_ticket).pack(pady=10)
+        tk.Button(self.root, text="View My Tickets", command=self.view_user_tickets).pack(pady=10)
+
+    def create_helpdesk_widgets(self):
+        tk.Label(self.root, text="Helpdesk: View All Tickets").pack(pady=5)
+        tk.Button(self.root, text="View All Tickets", command=self.view_all_tickets).pack(pady=10)
+
+    def insert_ticket(self):
+        description = self.description_entry.get()
+        category = self.category_var.get()
+        user_id = input("Enter your User ID: ").strip()
+        try:
+            self.db_manager.add_ticket(description, "open", category, int(user_id))
+            messagebox.showinfo("Success", "Ticket inserted successfully!")
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to insert ticket: {e}")
+
+    def view_user_tickets(self):
+        user_id = input("Enter your User ID: ").strip()
+        try:
+            tickets = self.db_manager.get_tickets_by_user(int(user_id))
+            self.display_tickets(tickets)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to retrieve tickets: {e}")
+
+    def view_all_tickets(self):
+        try:
+            tickets = self.db_manager.get_all_tickets()
+            self.display_tickets(tickets)
+        except sqlite3.Error as e:
+            messagebox.showerror("Error", f"Failed to retrieve all tickets: {e}")
+
+    def display_tickets(self, tickets):
+        ticket_window = tk.Toplevel(self.root)
+        ticket_window.title("Tickets")
+        for ticket in tickets:
+            tk.Label(ticket_window, text=ticket).pack()
+
+    def __del__(self):
+        """Ensures the database connection is closed when the object is destroyed."""
+        self.db_manager.__del__()
+
+if __name__ == "__main__":
+    user_role = input("Enter your role (user/helpdesk): ").strip().lower()
+    app = TicketManagementGUI(user_role)
+    tk.mainloop()
+```
+
+### database_manager.py
+```python
+'''
+This file manages the interaction with the SQLite database for storing and retrieving tickets.
+'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect("tickets.db")
+        self.cursor = self.conn.cursor()
+        self._create_tables()
+
+    def _create_tables(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                status TEXT CHECK( status IN ('open', 'active', 'closed') ) NOT NULL,
+                category TEXT NOT NULL,
+                user_id INTEGER NOT NULL,
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP
+            )
+        ''')
+        self.conn.commit()
+
+    def add_ticket(self, description, status, category, user_id):
+        """Adds a new ticket to the database."""
+        try:
+            query = "INSERT INTO tickets (description, status, category, user_id) VALUES (?, ?, ?, ?)"
+            self.cursor.execute(query, (description, status, category, user_id))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            raise e
+
+    def get_tickets_by_user(self, user_id):
+        """Retrieves all tickets for a specific user, filtered by open and active status."""
+        query = "SELECT * FROM tickets WHERE (status IN ('open', 'active') AND user_id = ?)"
+        self.cursor.execute(query, (user_id,))
+        return self.cursor.fetchall()
+
+    def get_all_tickets(self):
+        """Retrieves all tickets regardless of their status for helpdesk users."""
+        query = "SELECT * FROM tickets"
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def update_ticket(self, ticket_id, description=None, status=None):
+        """Updates the details of a specific ticket in the database."""
+        try:
+            updates = []
+            params = [ticket_id]
+            if description is not None:
+                updates.append("description = ?")
+                params.append(description)
+            if status is not None:
+                updates.append("status = ?")
+                params.append(status)
+            query = f"UPDATE tickets SET {', '.join(updates)}, last_modified_date = CURRENT_TIMESTAMP WHERE id = ?"
+            self.cursor.execute(query, params)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            raise e
+
+    def __del__(self):
+        """Ensures the database connection is closed when the object is destroyed."""
+        self.conn.close()
+```
+
+### microservices.py
+```python
+'''
+This file contains implementation for the microservices related to average ticket resolution time and clustering tickets by category.
+'''
+import sqlite3
+
+class Microservices:
+    def __init__(self):
+        self.conn = sqlite3.connect("tickets.db")
+        self.cursor = self.conn.cursor()
+
+    def get_average_resolution_time(self):
+        """Calculates the average ticket resolution time grouped by opening month."""
+        query = '''
+            SELECT strftime('%Y-%m', created_date) as month, AVG(julianday(last_modified_date) - julianday(created_date)) AS avg_res_time
+            FROM tickets
+            WHERE status = 'closed'
+            GROUP BY month
+        '''
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def cluster_tickets_by_category(self):
+        """Clusters tickets by category and displays the number of active tickets per category."""
+        query = '''
+            SELECT category, COUNT(*) as count FROM tickets WHERE status IN ('open', 'active') GROUP BY category
+        '''
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def __del__(self):
+        """Ensures the database connection is closed when the object is destroyed."""
+        self.conn.close()
+```
+
+This formatting ensures that each file follows the required format.
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Sure, here are the updated files following the required format:
+
+**ui.py**
+```python
+'''
+This file contains the implementation for the GUI of the ticket management application.
+'''
+import tkinter as tk
+from tkinter import messagebox
+from database_manager import DatabaseManager
+
+class TicketManagementApp:
+    def __init__(self, root):
+        self.root = root
+        self.db_manager = DatabaseManager()
+        self.root.title("Ticket Management Application")
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Create and place widgets here
+        pass
+
+def main():
+    root = tk.Tk()
+    app = TicketManagementApp(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()
+```
+
+**microservices_test.py**
+```python
+'''
+This file contains the tests for the microservices implemented in the ticket management application.
+'''
+import unittest
+from microservices import Microservices
+
+class TestMicroservices(unittest.TestCase):
+    def setUp(self):
+        self.microservices = Microservices()
+
+    # Implement test cases here
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+**database_manager.py**
+```python
+'''
+This file manages the interaction with the SQLite database for storing and retrieving tickets.
+'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect('ticket_management.db')
+        self.cursor = self.conn.cursor()
+        self._create_tables()
+
+    def _create_tables(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT CHECK( role IN ('simple_user', 'helpdesk_staff') ) NOT NULL
+            )
+        ''')
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                category TEXT CHECK( category IN ('facility management', 'technical IT', 'services complaints') ) NOT NULL,
+                status TEXT CHECK( status IN ('open', 'active', 'closed') ) NOT NULL DEFAULT 'open',
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ticket_interactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                message TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ticket_id) REFERENCES tickets(id),
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        ''')
+
+    def create_user(self, username, password, role):
+        """Creates a new user in the database."""
+        try:
+            query = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)"
+            self.cursor.execute(query, (username, password, role))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            raise e
+
+    def get_user_by_username(self, username):
+        """Retrieves a user by their username."""
+        query = "SELECT * FROM users WHERE username = ?"
+        self.cursor.execute(query, (username,))
+        return self.cursor.fetchone()
+
+    def add_ticket_interaction(self, ticket_id, user_id, message):
+        """Adds a new interaction to the ticket in the database."""
+        try:
+            query = "INSERT INTO ticket_interactions (ticket_id, user_id, message) VALUES (?, ?, ?)"
+            self.cursor.execute(query, (ticket_id, user_id, message))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            raise e
+
+    def get_ticket_interactions(self, ticket_id):
+        """Retrieves all interactions for the specified ticket."""
+        query = "SELECT * FROM ticket_interactions WHERE ticket_id = ?"
+        self.cursor.execute(query, (ticket_id,))
+        return self.cursor.fetchall()
+```
+
+**microservices.py**
+```python
+'''
+This file contains implementation for the microservices related to average ticket resolution time and clustering tickets by category.
+'''
+import sqlite3
+import datetime
+
+class Microservices:
+    def __init__(self):
+        self.conn = sqlite3.connect('ticket_management.db')
+        self.cursor = self.conn.cursor()
+
+    def get_open_tickets_in_period(self, hours=None, days=None):
+        """Displays the number of tickets opened in the selected period (last X hours/days) which have not yet been closed."""
+        query = '''
+            SELECT COUNT(*) as open_tickets
+            FROM tickets
+            WHERE status IN ('open', 'active')
+            AND created_date >= ?
+        '''
+        if hours is not None:
+            timestamp = datetime.datetime.now() - datetime.timedelta(hours=hours)
+            self.cursor.execute(query, (timestamp.isoformat(),))
+        elif days is not None:
+            timestamp = datetime.datetime.now() - datetime.timedelta(days=days)
+            self.cursor.execute(query, (timestamp.isoformat(),))
+        return self.cursor.fetchone()[0]
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Certainly! Here's your code arranged according to the specified required format:
+
+### main.py
+```python
+'''
+Entry point for the ticket management application.
+This script initializes the GUI for user interaction with the Ticket Management System.
+It handles both simple user and helpdesk staff roles, providing appropriate functionalities based on the selected role.
+'''
+
+import tkinter as tk
+from tkinter import messagebox
+from database_manager import DatabaseManager
+
+class TicketApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Ticket Management System")
+        # Initialize database manager
+        self.db_manager = DatabaseManager()
+        # User role selection
+        self.user_role_var = tk.StringVar(value="simple_user")
+        self.create_widgets()
+
+    def create_widgets(self):
+        role_frame = tk.Frame(self.root)
+        role_frame.pack(pady=20)
+
+        tk.Label(role_frame, text="Select Role:").pack(side=tk.LEFT)
+        tk.Radiobutton(role_frame, text="Simple User", variable=self.user_role_var, value="simple_user").pack(side=tk.LEFT)
+        tk.Radiobutton(role_frame, text="Helpdesk Staff", variable=self.user_role_var, value="helpdesk_staff").pack(side=tk.LEFT)
+
+        self.ticket_frame = tk.Frame(self.root)
+        self.ticket_frame.pack()
+
+        load_button = tk.Button(self.root, text="Load Tickets", command=self.load_tickets)
+        load_button.pack(pady=10)
+
+        if self.user_role_var.get() == "simple_user":
+            add_button = tk.Button(self.root, text="Add Ticket", command=self.add_ticket)
+            add_button.pack(pady=10)
+
+    def load_tickets(self):
+        role = self.user_role_var.get()
+        try:
+            if role == "simple_user":
+                tickets = self.db_manager.get_tickets_by_status('open')
+            else:
+                tickets = self.db_manager.get_all_tickets()
+
+            for widget in self.ticket_frame.winfo_children():
+                widget.destroy()  # Clear previous tickets
+
+            for ticket in tickets:
+                tk.Label(self.ticket_frame, text=ticket).pack()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def add_ticket(self):
+        # Create a simple popup to input the description and category of a new ticket
+        top = tk.Toplevel(self.root)
+        desc_label = tk.Label(top, text="Description")
+        desc_entry = tk.Entry(top)
+
+        cat_label = tk.Label(top, text="Category (facility management/technical IT/services complaints)")
+        cat_entry = tk.Entry(top)
+
+        save_button = tk.Button(top, text="Save", command=lambda: self.save_ticket(desc_entry.get(), cat_entry.get()))
+
+        desc_label.pack()
+        desc_entry.pack()
+        cat_label.pack()
+        cat_entry.pack()
+        save_button.pack()
+
+    def save_ticket(self, description, category):
+        if not description or not category:
+            messagebox.showerror("Error", "Description and Category are required")
+            return
+
+        try:
+            self.db_manager.add_ticket(description, category)
+            messagebox.showinfo("Success", "Ticket added successfully!")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TicketApp(root)
+    root.mainloop()
+```
+
+### database_manager.py
+```python
+'''
+This module handles all interactions with the SQLite database.
+It provides functions for CRUD operations related to tickets and messages,
+including error handling and logging mechanisms.
+'''
+
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect("tickets.db")
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+        try:
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS tickets (
+                    id INTEGER PRIMARY KEY,
+                    description TEXT NOT NULL,
+                    category TEXT NOT NULL CHECK(category IN ('facility management', 'technical IT', 'services complaints')),
+                    status TEXT DEFAULT 'open',
+                    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY,
+                    ticket_id INTEGER,
+                    message TEXT NOT NULL,
+                    sent_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+                )
+            ''')
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error creating tables: {e}")
+
+    def add_ticket(self, description, category):
+        try:
+            self.cursor.execute('INSERT INTO tickets (description, category) VALUES (?, ?)', (description, category))
+            self.conn.commit()
+        except sqlite3.IntegrityError as e:
+            raise Exception(f"Integrity Error: {e}")
+        except sqlite3.Error as e:
+            raise Exception(f"Database Error: {e}")
+
+    def update_ticket(self, ticket_id, description=None, status=None):
+        try:
+            updates = []
+            params = [ticket_id]
+            if description is not None:
+                updates.append("description = ?")
+                params.append(description)
+            if status is not None:
+                updates.append("status = ?")
+                params.append(status)
+
+            query = f"UPDATE tickets SET {', '.join(updates)}, last_modified_date = CURRENT_TIMESTAMP WHERE id = ?"
+            self.cursor.execute(query, params)
+            self.conn.commit()
+        except sqlite3.Error as e:
+            raise Exception(f"Error updating ticket: {e}")
+
+    def add_message(self, ticket_id, message):
+        try:
+            self.cursor.execute('INSERT INTO messages (ticket_id, message) VALUES (?, ?)', (ticket_id, message))
+            self.conn.commit()
+        except sqlite3.IntegrityError as e:
+            raise Exception(f"Integrity Error: {e}")
+        except sqlite3.Error as e:
+            raise Exception(f"Database Error: {e}")
+
+    def get_tickets_by_status(self, status):
+        try:
+            query = 'SELECT * FROM tickets WHERE status = ?'
+            self.cursor.execute(query, (status,))
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            raise Exception(f"Error fetching tickets by status: {e}")
+
+    def get_all_tickets(self):
+        try:
+            self.cursor.execute('SELECT * FROM tickets')
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            raise Exception(f"Error fetching all tickets: {e}")
+
+    def __del__(self):
+        """Ensures the database connection is closed when the object is destroyed."""
+        self.conn.close()
+```
+
+### microservices.py
+```python
+'''
+This module contains implementations of microservices that perform data analysis on tickets.
+It includes functionalities to count open tickets within a given period, calculate average resolution times,
+and cluster tickets by their categories.
+'''
+
+import sqlite3
+
+class Microservices:
+    def __init__(self):
+        self.conn = sqlite3.connect("tickets.db")
+        self.cursor = self.conn.cursor()
+
+    def get_open_ticket_count(self, hours=0, days=0):
+        """Counts the number of tickets that are open within the given period."""
+        try:
+            query = '''
+                SELECT COUNT(*) as count
+                FROM tickets
+                WHERE status = 'open'
+                  AND created_date >= datetime('now', ? || ' hours', ? || ' days')
+            '''
+            self.cursor.execute(query, (hours, days))
+            return self.cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            raise Exception(f"Error counting open tickets: {e}")
+
+    def get_average_resolution_time(self):
+        """Calculates the average ticket resolution time grouped by opening month."""
+        try:
+            query = '''
+                SELECT strftime('%Y-%m', created_date) as month, AVG(julianday(last_modified_date) - julianday(created_date)) AS avg_res_time
+                FROM tickets
+                WHERE status = 'closed'
+                GROUP BY month
+            '''
+            self.cursor.execute(query)
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            raise Exception(f"Error calculating average resolution time: {e}")
+
+    def cluster_tickets_by_category(self):
+        """Clusters and returns the count of open, active, and closed tickets by category."""
+        try:
+            query = '''
+                SELECT category, status, COUNT(*) as count
+                FROM tickets
+                GROUP BY category, status
+            '''
+            self.cursor.execute(query)
+            return self.cursor.fetchall()
+        except sqlite3.Error as e:
+            raise Exception(f"Error clustering tickets: {e}")
+
+    def __del__(self):
+        """Ensures the database connection is closed when the object is destroyed."""
+        self.conn.close()
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+```main.py
+'''
+Main Application for Ticket Management System using Tkinter GUI.
+'''
+import tkinter as tk
+from tkinter import messagebox
+from database_manager import DatabaseManager
+from microservices import Microservices
+
+class TicketApp:
+    def __init__(self, root):
+        self.root = root
+        self.db_manager = DatabaseManager()
+        self.microservice = Microservices()
+
+        # Setup UI Elements
+        self.setup_ui()
+
+    def setup_ui(self):
+        title_label = tk.Label(self.root, text="Ticket Management System")
+        title_label.pack(pady=10)
+
+        add_button = tk.Button(self.root, text="Add Ticket", command=self.add_ticket)
+        add_button.pack(pady=5)
+
+        update_button = tk.Button(self.root, text="Update Ticket Status", command=self.update_selected_ticket)
+        update_button.pack(pady=5)
+
+        message_button = tk.Button(self.root, text="Add Message to Ticket", command=self.add_message_to_selected_ticket)
+        message_button.pack(pady=5)
+
+        self.ticket_listbox = tk.Listbox(self.root)
+        self.load_tickets()
+
+    def load_tickets(self):
+        tickets = self.db_manager.get_all_tickets()
+        for ticket in tickets:
+            self.ticket_listbox.insert(tk.END, f"{ticket[0]}: {ticket[2]}")
+
+    def add_ticket(self):
+        top = tk.Toplevel()
+        desc_label = tk.Label(top, text="Description:")
+        desc_entry = tk.Entry(top)
+        category_label = tk.Label(top, text="Category:")
+        category_entry = tk.Entry(top)
+
+        categories = ["facility management", "technical IT", "services complaints"]
+
+        def on_add():
+            description = desc_entry.get()
+            category = category_entry.get().lower()
+
+            if description and category in categories:
+                self.db_manager.add_ticket(description, 'open', category)
+                self.load_tickets()
+                top.destroy()
+            else:
+                messagebox.showwarning("Error", "Invalid input or category.")
+
+        add_button = tk.Button(top, text="Add Ticket", command=on_add)
+
+        desc_label.pack(pady=2)
+        desc_entry.pack(pady=2)
+        category_label.pack(pady=2)
+        category_entry.pack(pady=2)
+        add_button.pack(pady=5)
+
+    def update_selected_ticket(self):
+        selected_index = self.ticket_listbox.curselection()
+        if not selected_index:
+            messagebox.showwarning("Warning", "Select a ticket to update.")
+            return
+
+        ticket_id = int(self.ticket_listbox.get(selected_index[0]).split(':')[0])
+        status_update = messagebox.askquestion("Update Status", "Change to closed?")
+        self.db_manager.update_ticket(ticket_id, 'closed' if status_update.lower() == 'yes' else None)
+
+    def add_message_to_selected_ticket(self):
+        selected_index = self.ticket_listbox.curselection()
+        if not selected_index:
+            messagebox.showwarning("Warning", "Select a ticket to add a message.")
+            return
+
+        ticket_id = int(self.ticket_listbox.get(selected_index[0]).split(':')[0])
+        top = tk.Toplevel()
+
+        msg_label = tk.Label(top, text="Message:")
+        msg_entry = tk.Entry(top)
+
+        def on_add():
+            message = msg_entry.get()
+            if message:
+                self.db_manager.add_message(ticket_id, message)
+                top.destroy()
+            else:
+                messagebox.showwarning("Error", "Invalid input.")
+
+        add_button = tk.Button(top, text="Add Message", command=on_add)
+
+        msg_label.pack(pady=2)
+        msg_entry.pack(pady=2)
+        add_button.pack(pady=5)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TicketApp(root)
+    root.mainloop()
+
+```
+
+```database_manager.py
+'''
+Database Manager for the ticket management system.
+Handles all CRUD operations and ensures data integrity checks.
+'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect("tickets.db")
+
+    def add_ticket(self, description, status, category):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO tickets (description, status, category)
+                VALUES (?, ?, ?)
+            ''', (description, status, category))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+        return True
+
+    def update_ticket(self, ticket_id, status=None):
+        cursor = self.conn.cursor()
+        if status:
+            try:
+                cursor.execute('''
+                    UPDATE tickets
+                    SET status=?, last_modified_date=CURRENT_TIMESTAMP
+                    WHERE id=?
+                ''', (status, ticket_id))
+                self.conn.commit()
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+        else:
+            try:
+                cursor.execute('''
+                    UPDATE tickets
+                    SET last_modified_date=CURRENT_TIMESTAMP
+                    WHERE id=?
+                ''', (ticket_id,))
+                self.conn.commit()
+            except sqlite3.Error as e:
+                print(f"Database error: {e}")
+
+    def add_message(self, ticket_id, message):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO messages (ticket_id, message)
+                VALUES (?, ?)
+            ''', (ticket_id, message))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+
+    def get_tickets_by_status(self, status):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT id, created_date, description, category
+                FROM tickets
+                WHERE status=?
+            ''', (status,))
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+
+    def get_all_tickets(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT id, created_date, description, category
+                FROM tickets
+            ''')
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+
+```
+
+```microservices.py
+'''
+Microservice Functions for the ticket management system.
+Provides methods to perform specific queries and calculations on the database.
+'''
+import sqlite3
+
+class Microservices:
+    def __init__(self):
+        self.conn = sqlite3.connect("tickets.db")
+
+    def get_open_ticket_count(self, hours, days):
+        cursor = self.conn.cursor()
+        query = '''
+            SELECT COUNT(*) as count
+            FROM tickets
+            WHERE status = 'open'
+              AND created_date >= datetime('now', ?, ?)
+        '''
+        try:
+            cursor.execute(query, (f"-{hours} hours", f"-{days} days"))
+            result = cursor.fetchone()
+            return result[0] if result else 0
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_average_time_to_close(self):
+        cursor = self.conn.cursor()
+        query = '''
+            SELECT AVG(julianday(closed_date) - julianday(created_date)) as average_days
+            FROM tickets
+            WHERE status = 'closed'
+        '''
+        try:
+            cursor.execute(query)
+            result = cursor.fetchone()
+            return result[0] if result else 0
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_active_tickets_by_category(self):
+        cursor = self.conn.cursor()
+        query = '''
+            SELECT category, COUNT(*) as count
+            FROM tickets
+            WHERE status IN ('open', 'active')
+            GROUP BY category
+        '''
+        try:
+            cursor.execute(query)
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Certainly! Below are the corrected versions of each file in the specified format:
+
+### main.py
+```python
+'''
+Main application logic and GUI setup.
+'''
+
+import tkinter as tk
+from database_manager import DatabaseManager
+from microservices import Microservices
+
+class TicketApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Ticket Management System")
+        self.db_manager = DatabaseManager()
+        self.microservices = Microservices()
+
+        self.create_widgets()
+
+    def create_widgets(self):
+        # User role selection dropdown and button
+        tk.Label(self.root, text="Select Role:").pack()
+        roles = ["Helpdesk", "Simple User"]
+        self.role_var = tk.StringVar(value=roles[0])
+        role_menu = tk.OptionMenu(self.root, self.role_var, *roles)
+        role_menu.pack()
+
+        select_role_button = tk.Button(self.root, text="Select Role", command=self.select_role)
+        select_role_button.pack()
+
+    def select_role(self):
+        role = self.role_var.get()
+        if role == "Helpdesk":
+            self.create_helpdesk_interface()
+        elif role == "Simple User":
+            self.create_simple_user_interface()
+
+    def create_helpdesk_interface(self):
+        tk.Label(self.root, text="Helpdesk Interface").pack()
+
+        # Ticket status update section
+        ticket_id_var = tk.StringVar()
+        new_status_var = tk.StringVar(value="closed")
+        tk.Entry(self.root, textvariable=ticket_id_var).pack()
+        tk.OptionMenu(self.root, new_status_var, "open", "active", "closed").pack()
+
+        update_button = tk.Button(self.root, text="Update Status",
+                                  command=lambda: self.update_ticket(ticket_id_var.get(), new_status_var.get()))
+        update_button.pack()
+
+    def create_simple_user_interface(self):
+        tk.Label(self.root, text="Simple User Interface").pack()
+
+        # Ticket creation section
+        description_var = tk.StringVar()
+        category_var = tk.StringVar(value="general")
+        status_var = tk.StringVar(value="open")
+
+        tk.Entry(self.root, textvariable=description_var).pack()
+        tk.OptionMenu(self.root, category_var, "general", "technical").pack()
+
+        create_button = tk.Button(
+            self.root,
+            text="Create Ticket",
+            command=lambda: self.create_ticket(description_var.get(), status_var.get(), category_var.get())
+        )
+        create_button.pack()
+
+    def update_ticket(self, ticket_id, new_status):
+        success = self.db_manager.update_ticket(ticket_id, new_status)
+        if success:
+            tk.messagebox.showinfo("Success", "Ticket updated successfully.")
+        else:
+            tk.messagebox.showerror("Error", "Failed to update ticket.")
+
+    def create_ticket(self, description, status, category):
+        success = self.db_manager.add_ticket(description, status, category)
+        if success:
+            tk.messagebox.showinfo("Success", "Ticket created successfully.")
+        else:
+            tk.messagebox.showerror("Error", "Failed to create ticket.")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TicketApp(root)
+    root.mainloop()
+```
+
+### database_manager.py
+```python
+'''
+Database management class for the ticket system.
+'''
+
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self, db_name="tickets.db"):
+        self.conn = sqlite3.connect(db_name)
+
+    def create_tables(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS tickets (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    description TEXT,
+                    status TEXT
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ticket_id INTEGER,
+                    message TEXT,
+                    FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+                )
+            ''')
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+
+    def add_ticket(self, description):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO tickets (description, status)
+                VALUES (?, ?)
+            ''', (description, "open"))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+        return True
+
+    def update_ticket(self, ticket_id, new_status):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                UPDATE tickets
+                SET status=?, created_date=CURRENT_TIMESTAMP
+                WHERE id=?
+            ''', (new_status, ticket_id))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+        return True
+
+    def add_message(self, ticket_id, message):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                INSERT INTO messages (ticket_id, message)
+                VALUES (?, ?)
+            ''', (ticket_id, message))
+            self.conn.commit()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+        return True
+
+    def get_tickets_by_status(self, status):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT id, created_date, description, category
+                FROM tickets
+                WHERE status=?
+            ''', (status,))
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+
+    def get_all_tickets(self):
+        """
+        Retrieve all tickets.
+        Returns:
+            list: List of tuples containing ticket information.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT id, created_date, description, status
+                FROM tickets
+            ''')
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+```
+
+### microservices.py
+```python
+'''
+Microservice Functions for the Ticket Management System.
+Provides methods to perform specific queries and calculations on the database.
+'''
+
+import sqlite3
+
+class Microservices:
+    def __init__(self, db_name="tickets.db"):
+        self.conn = sqlite3.connect(db_name)
+
+    def get_open_ticket_count(self, hours=0, days=0):
+        """
+        Get the count of open tickets within a specified time frame.
+        Args:
+            hours (int): Number of hours to look back.
+            days (int): Number of days to look back.
+        Returns:
+            int: Count of open tickets.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT COUNT(*) FROM tickets
+                WHERE status='open' AND created_date >= datetime('now', ? || ' hours')
+            ''', ('-' + str(hours),))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_active_ticket_count(self, hours=0, days=0):
+        """
+        Get the count of active tickets within a specified time frame.
+        Args:
+            hours (int): Number of hours to look back.
+            days (int): Number of days to look back.
+        Returns:
+            int: Count of active tickets.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT COUNT(*) FROM tickets
+                WHERE status='active' AND created_date >= datetime('now', ? || ' hours')
+            ''', ('-' + str(hours),))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_closed_ticket_count(self, hours=0, days=0):
+        """
+        Get the count of closed tickets within a specified time frame.
+        Args:
+            hours (int): Number of hours to look back.
+            days (int): Number of days to look back.
+        Returns:
+            int: Count of closed tickets.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT COUNT(*) FROM tickets
+                WHERE status='closed' AND created_date >= datetime('now', ? || ' hours')
+            ''', ('-' + str(hours),))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_ticket_statistics(self):
+        """
+        Get overall statistics for tickets.
+        Returns:
+            dict: A dictionary containing counts of open, active, and closed tickets.
+        """
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT COUNT(*), status FROM tickets
+                GROUP BY status
+            ''')
+            results = {row[1]: row[0] for row in cursor.fetchall()}
+            return {
+                'open': results.get('open', 0),
+                'active': results.get('active', 0),
+                'closed': results.get('closed', 0)
+            }
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return {}
+```
+
+These revised code snippets follow the required format with the appropriate values for `$FILENAME`, `$LANGUAGE`, `$DOCSTRING`, and `$CODE`.
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+```python
+main.py
+'''
+API implementation for the Ticket Management System. This file defines the endpoints required to interact with the system via HTTP requests.
+'''
+from flask import Flask, request, jsonify
+from database_manager import DatabaseManager
+app = Flask(__name__)
+db_manager = DatabaseManager()
+
+@app.route('/tickets', methods=['GET'])
+def get_tickets():
+    tickets = db_manager.get_all_tickets()
+    return jsonify(tickets)
+
+@app.route('/tickets/<int:ticket_id>', methods=['GET'])
+def get_ticket_by_id(ticket_id):
+    ticket = db_manager.get_ticket_by_id(ticket_id)
+    if ticket:
+        return jsonify(ticket)
+    else:
+        return jsonify({"error": "Ticket not found"}), 404
+
+@app.route('/tickets', methods=['POST'])
+def add_ticket():
+    data = request.json
+    description = data['description']
+    status = data.get('status', 'open')
+    category = data['category']
+    success = db_manager.add_ticket(description, status, category)
+    if success:
+        return jsonify({"message": "Ticket added successfully"}), 201
+    else:
+        return jsonify({"error": "Failed to add ticket"}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['PUT'])
+def update_ticket(ticket_id):
+    data = request.json
+    description = data.get('description')
+    status = data.get('status')
+    closed_at = data.get('closed_at')
+    success = db_manager.update_ticket(ticket_id, description, status, closed_at)
+    if success:
+        return jsonify({"message": "Ticket updated successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to update ticket"}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
+def delete_ticket(ticket_id):
+    success = db_manager.delete_ticket(ticket_id)
+    if success:
+        return jsonify({"message": "Ticket deleted successfully"}), 200
+    else:
+        return jsonify({"error": "Failed to delete ticket"}), 500
+
+@app.route('/login', methods=['GET'])
+def login_page():
+    # Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    # This is a placeholder for the actual implementation of the login page.
+    return jsonify({"message": "Login page endpoint"}), 200
+
+@app.route('/tickets/<int:ticket_id>/messages', methods=['POST'])
+def add_message(ticket_id):
+    data = request.json
+    message = data['message']
+    user_type = data['user_type'] # 'simple_user' or 'helpdesk'
+    success = db_manager.add_message(ticket_id, message, user_type)
+    if success:
+        return jsonify({"message": "Message added successfully"}), 201
+    else:
+        return jsonify({"error": "Failed to add message"}), 500
+
+@app.route('/tickets/<int:ticket_id>/messages', methods=['GET'])
+def get_messages(ticket_id):
+    messages = db_manager.get_messages_by_ticket_id(ticket_id)
+    if messages:
+        return jsonify(messages), 200
+    else:
+        return jsonify({"error": "No messages found for this ticket"}), 404
+
+if __name__ == "__main__":
+    app.run(debug=True)
+```
+
+```python
+database_manager.py
+'''
+Database Manager Module: Handles all database operations for the Ticket Management System.
+'''
+import sqlite3
+class DatabaseManager:
+    def __init__(self, db_name='tickets.db'):
+        self.connection = sqlite3.connect(db_name, check_same_thread=False)
+        self.cursor = self.connection.cursor()
+        self._create_tables()
+
+    def _create_tables(self):
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                status TEXT NOT NULL,
+                category TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_modified_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL,
+                message TEXT NOT NULL,
+                user_type TEXT NOT NULL, -- 'simple_user' or 'helpdesk'
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (ticket_id) REFERENCES tickets(id)
+            )
+        ''')
+        self.connection.commit()
+
+    def get_all_tickets(self):
+        self.cursor.execute('SELECT * FROM tickets')
+        return self.cursor.fetchall()
+
+    def get_ticket_by_id(self, ticket_id):
+        self.cursor.execute('SELECT * FROM tickets WHERE id = ?', (ticket_id,))
+        return self.cursor.fetchone()
+
+    def add_ticket(self, description, status, category):
+        try:
+            self.cursor.execute('INSERT INTO tickets (description, status, category) VALUES (?, ?, ?)', (description, status, category))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def update_ticket(self, ticket_id, description, status, closed_at):
+        try:
+            self.cursor.execute('UPDATE tickets SET description=?, status=?, last_modified_at=CURRENT_TIMESTAMP WHERE id=?', (description, status, ticket_id))
+            if closed_at:
+                self.cursor.execute('UPDATE tickets SET closed_at=? WHERE id=?', (closed_at, ticket_id))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def delete_ticket(self, ticket_id):
+        try:
+            self.cursor.execute('DELETE FROM tickets WHERE id = ?', (ticket_id,))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def add_message(self, ticket_id, message, user_type):
+        try:
+            self.cursor.execute('INSERT INTO messages (ticket_id, message, user_type) VALUES (?, ?, ?)', (ticket_id, message, user_type))
+            self.connection.commit()
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+    def get_messages_by_ticket_id(self, ticket_id):
+        try:
+            self.cursor.execute('SELECT * FROM messages WHERE ticket_id = ?', (ticket_id,))
+            return self.cursor.fetchall()
+        except Exception as e:
+            print(e)
+            return None
+```
+
+```python
+microservices.py
+'''
+Microservice Module: Provides various statistical and operational services for the Ticket Management System.
+'''
+import sqlite3
+
+class Microservices:
+    def __init__(self, db_name='tickets.db'):
+        self.connection = sqlite3.connect(db_name, check_same_thread=False)
+        self.cursor = self.connection.cursor()
+
+    def get_open_ticket_count(self, hours=None, days=None):
+        query = 'SELECT COUNT(*) FROM tickets WHERE status=?'
+        params = ('open',)
+        if hours:
+            query += ' AND created_at >= datetime("now", ?)'
+            params += (f'-{hours} hours',)
+        elif days:
+            query += ' AND created_at >= datetime("now", ?)'
+            params += (f'-{days} days',)
+
+        self.cursor.execute(query, params)
+        return self.cursor.fetchone()[0]
+
+    def get_average_resolution_time(self):
+        self.cursor.execute('SELECT AVG(julianday(closed_at) - julianday(created_at)) FROM tickets WHERE status=?', ('closed',))
+        result = self.cursor.fetchone()[0]
+        return result if result else 0
+
+    def get_ticket_stats(self):
+        self.cursor.execute('SELECT status, COUNT(*) FROM tickets GROUP BY status')
+        data = self.cursor.fetchall()
+        stats = {'open': 0, 'active': 0, 'closed': 0}
+        for status, count in data:
+            if status in stats:
+                stats[status] += count
+        return stats
+
+    def get_active_tickets_by_category(self):
+        self.cursor.execute('SELECT category, COUNT(*) FROM tickets WHERE status=? GROUP BY category', ('active',))
+        return self.cursor.fetchall()
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Sure! Here's the rearranged code according to the specified format:
+
+#### main.py
+```python
+'''
+Main API implementation file for the Ticket Management System. This file defines the endpoints required to interact with the system via HTTP requests.
+'''
+from flask import Flask, request, jsonify
+from database_manager import DatabaseManager
+from user_manager import UserRole, UserManager
+
+app = Flask(__name__)
+db_manager = DatabaseManager()
+user_manager = UserManager()
+
+@app.route('/tickets', methods=['GET'])
+def get_tickets():
+    tickets = db_manager.get_all_tickets()
+    return jsonify(tickets)
+
+@app.route('/tickets/<int:ticket_id>', methods=['GET'])
+def get_ticket_by_id(ticket_id):
+    ticket = db_manager.get_ticket_by_id(ticket_id)
+    if ticket:
+        return jsonify(ticket)
+    else:
+        return jsonify({"error": "Ticket not found"}), 404
+
+@app.route('/tickets', methods=['POST'])
+def add_ticket():
+    data = request.json
+    description = data['description']
+    status = data.get('status', 'open')
+    category = data['category']
+    success = db_manager.add_ticket(description, status, category)
+    if success:
+        return jsonify({"message": "Ticket added successfully"}), 201
+    else:
+        return jsonify({"error": "Failed to add ticket"}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['PUT'])
+def update_ticket(ticket_id):
+    data = request.json
+    description = data.get('description')
+    status = data.get('status')
+    closed_at = data.get('closed_at')
+
+    user_role = UserRole.SIMPLE_USER  # This should be determined based on the actual user context
+
+    if not user_manager.can_modify_ticket(user_role, ticket_id):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    success = db_manager.update_ticket(ticket_id, description, status, closed_at)
+    if success:
+        return jsonify({"message": "Ticket updated successfully"})
+    else:
+        return jsonify({"error": "Failed to update ticket"}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
+def delete_ticket(ticket_id):
+    user_role = UserRole.HELPDESK_USER  # This should be determined based on the actual user context
+    if not user_manager.can_delete_ticket(user_role, ticket_id):
+        return jsonify({"error": "Unauthorized access"}), 403
+
+    success = db_manager.delete_ticket(ticket_id)
+    if success:
+        return jsonify({"message": "Ticket deleted successfully"})
+    else:
+        return jsonify({"error": "Failed to delete ticket"}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+#### database_manager.py
+```python
+'''
+Database Manager module for handling CRUD operations on the Ticket Management System.
+'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self, db_name="tickets.db"):
+        self.conn = sqlite3.connect(db_name)
+
+    def get_all_tickets(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('SELECT * FROM tickets')
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+
+    def get_ticket_by_id(self, ticket_id):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('SELECT * FROM tickets WHERE id=?', (ticket_id,))
+            return cursor.fetchone()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return None
+
+    def add_ticket(self, description, status, category):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('INSERT INTO tickets (description, status, category) VALUES (?, ?, ?)', (description, status, category))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+
+    def update_ticket(self, ticket_id, description=None, status=None, closed_at=None):
+        cursor = self.conn.cursor()
+        try:
+            updates = []
+            params = []
+            if description is not None:
+                updates.append('description=?')
+                params.append(description)
+            if status is not None:
+                updates.append('status=?')
+                params.append(status)
+            if closed_at is not None:
+                updates.append('closed_at=?')
+                params.append(closed_at)
+            params.append(ticket_id)
+            cursor.execute(f'UPDATE tickets SET {", ".join(updates)} WHERE id=?', params)
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+
+    def delete_ticket(self, ticket_id):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('DELETE FROM tickets WHERE id=?', (ticket_id,))
+            self.conn.commit()
+            return True
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return False
+```
+
+#### user_manager.py
+```python
+'''
+User Manager module for handling role-based access control.
+'''
+from enum import Enum
+
+class UserRole(Enum):
+    SIMPLE_USER = 1
+    HELPDESK_USER = 2
+
+class UserManager:
+    def can_modify_ticket(self, user_role, ticket_id):
+        # Implement logic to check if the user has permission to modify a ticket
+        return True
+
+    def can_delete_ticket(self, user_role, ticket_id):
+        # Implement logic to check if the user has permission to delete a ticket
+        return user_role == UserRole.HELPDESK_USER
+```
+
+#### microservices.py
+```python
+'''
+Microservices Module: Provides data visualization and analysis functionalities for the Ticket Management System.
+'''
+import sqlite3
+
+class Microservices:
+    def __init__(self, db_name="tickets.db"):
+        self.conn = sqlite3.connect(db_name)
+
+    def get_open_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            time_filter = f'-{days} days' if days else f'-{hours} hours'
+            cursor.execute('SELECT COUNT(*) FROM tickets WHERE status=? AND created_at >= datetime("now", ?)', ('open', time_filter))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_active_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            time_filter = f'-{days} days' if days else f'-{hours} hours'
+            cursor.execute('SELECT COUNT(*) FROM tickets WHERE status=? AND created_at >= datetime("now", ?)', ('active', time_filter))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_closed_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            time_filter = f'-{days} days' if days else f'-{hours} hours'
+            cursor.execute('SELECT COUNT(*) FROM tickets WHERE status=? AND created_at >= datetime("now", ?)', ('closed', time_filter))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_average_resolution_time(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('SELECT AVG(julianday(closed_at) - julianday(created_at)) FROM tickets WHERE status=?', ('closed',))
+            result = cursor.fetchone()[0]
+            return result if result else 0
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_ticket_stats(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('SELECT status, COUNT(*) FROM tickets GROUP BY status')
+            data = cursor.fetchall()
+            stats = {'open': 0, 'active': 0, 'closed': 0}
+            for status, count in data:
+                if status in stats:
+                    stats[status] += count
+            return stats
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return {}
+```
+
+#### frontend.py (using Tkinter)
+```python
+'''
+Frontend module using Tkinter for the Ticket Management System.
+'''
+import tkinter as tk
+from tkinter import messagebox
+
+class TicketApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Ticket Management System")
+
+        # Initialize UI components
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Create a label and entry for ticket description
+        tk.Label(self.root, text="Description").grid(row=0)
+        self.description_entry = tk.Entry(self.root)
+        self.description_entry.grid(row=0, column=1)
+
+        # Create a label and entry for ticket status
+        tk.Label(self.root, text="Status").grid(row=1)
+        self.status_entry = tk.Entry(self.root)
+        self.status_entry.grid(row=1, column=1)
+
+        # Create a label and entry for ticket category
+        tk.Label(self.root, text="Category").grid(row=2)
+        self.category_entry = tk.Entry(self.root)
+        self.category_entry.grid(row=2, column=1)
+
+        # Create buttons for add and delete tickets
+        tk.Button(self.root, text='Add Ticket', command=self.add_ticket).grid(row=3, column=0, sticky=tk.W, pady=4)
+        tk.Button(self.root, text='Delete Ticket', command=self.delete_ticket).grid(row=3, column=1, sticky=tk.W, pady=4)
+
+        # Create UI for period selection
+        self.create_period_selection_ui()
+
+    def create_period_selection_ui(self):
+        # Add widgets to select hours and days
+        tk.Label(self.root, text="Hours").grid(row=4)
+        self.hours_entry = tk.Entry(self.root)
+        self.hours_entry.grid(row=4, column=1)
+
+        tk.Label(self.root, text="Days").grid(row=5)
+        self.days_entry = tk.Entry(self.root)
+        self.days_entry.grid(row=5, column=1)
+
+    def add_ticket(self):
+        # Implement logic to add a ticket
+        description = self.description_entry.get()
+        status = self.status_entry.get()
+        category = self.category_entry.get()
+
+        if not description or not status or not category:
+            messagebox.showerror("Input error", "All fields are required!")
+            return
+
+        # Call API to add the ticket and handle response
+        print(f"Adding ticket: {description}, {status}, {category}")
+        messagebox.showinfo("Success", "Ticket added successfully!")
+
+    def delete_ticket(self):
+        # Implement logic to delete a ticket
+        pass
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TicketApp(root)
+    root.mainloop()
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+```main.py
+'''Main entry point for the Ticket Management System API.'''
+from flask import Flask, request, jsonify
+from database_manager import DatabaseManager
+from user_manager import UserRole, UserManager
+
+app = Flask(__name__)
+db_manager = DatabaseManager()
+user_manager = UserManager()
+
+@app.route('/tickets', methods=['GET'])
+def get_tickets():
+    try:
+        # Add role-based access control here (if needed for the specific requirements)
+        tickets = db_manager.get_all_tickets()
+        return jsonify(tickets), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['GET'])
+def get_ticket_by_id(ticket_id):
+    try:
+        ticket = db_manager.get_ticket_by_id(ticket_id)
+        if ticket is None:
+            return jsonify({"error": "Ticket not found"}), 404
+        return jsonify(ticket), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/tickets', methods=['POST'])
+def add_ticket():
+    try:
+        data = request.json
+        db_manager.add_ticket(data['description'], data['status'], data['category'])
+        return jsonify({"message": "Ticket added successfully"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['PUT'])
+def modify_ticket(ticket_id):
+    try:
+        data = request.json
+        db_manager.modify_ticket(ticket_id, data['description'], data['status'], data['category'])
+        return jsonify({"message": "Ticket modified successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/tickets/<int:ticket_id>', methods=['DELETE'])
+def delete_ticket(ticket_id):
+    try:
+        db_manager.delete_ticket(ticket_id)
+        return jsonify({"message": "Ticket deleted successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
+```database_manager.py
+'''Manages all interactions with the ticket management database.'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect('tickets.db')
+        self._create_table()
+
+    def _create_table(self):
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                status TEXT NOT NULL,
+                category TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        self.conn.commit()
+
+    def get_all_tickets(self):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT * FROM tickets')
+        return cursor.fetchall()
+
+    def get_ticket_by_id(self, ticket_id):
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT * FROM tickets WHERE id=?', (ticket_id,))
+        return cursor.fetchone()
+
+    def add_ticket(self, description, status, category):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'INSERT INTO tickets (description, status, category) VALUES (?, ?, ?)',
+            (description, status, category)
+        )
+        self.conn.commit()
+
+    def modify_ticket(self, ticket_id, description, status, category):
+        cursor = self.conn.cursor()
+        cursor.execute(
+            'UPDATE tickets SET description=?, status=?, category=? WHERE id=?',
+            (description, status, category, ticket_id)
+        )
+        self.conn.commit()
+
+    def delete_ticket(self, ticket_id):
+        cursor = self.conn.cursor()
+        cursor.execute('DELETE FROM tickets WHERE id=?', (ticket_id,))
+        self.conn.commit()
+
+```user_manager.py
+'''Manages user roles and permissions.'''
+class UserRole:
+    HELPDESK_STAFF = 1
+    SIMPLE_USER = 2
+
+class UserManager:
+    def __init__(self):
+        pass
+
+    # Implement additional methods if needed to manage user roles
+
+```microservices.py
+'''Handles data analysis and reporting.'''
+import sqlite3
+
+class Microservices:
+    def __init__(self, db_path='tickets.db'):
+        self.conn = sqlite3.connect(db_path)
+        self.cursor = self.conn.cursor()
+
+    def get_open_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            if (hours > 0 and days == 0) or (days > 0 and hours == 0):
+                time_filter = f'-{hours} hour' if hours else f'-{days} day'
+                query = 'SELECT COUNT(*) FROM tickets WHERE status=? AND created_at >= datetime("now", ?)'
+                cursor.execute(query, ('open', time_filter))
+            else:
+                raise ValueError("Either hours or days must be specified, not both.")
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+        except ValueError as ve:
+            print(f"Value error: {ve}")
+            return 0
+
+    def get_active_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            if (hours > 0 and days == 0) or (days > 0 and hours == 0):
+                time_filter = f'-{hours} hour' if hours else f'-{days} day'
+                query = 'SELECT COUNT(*) FROM tickets WHERE status=? AND created_at >= datetime("now", ?)'
+                cursor.execute(query, ('active', time_filter))
+            else:
+                raise ValueError("Either hours or days must be specified, not both.")
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+        except ValueError as ve:
+            print(f"Value error: {ve}")
+            return 0
+
+    def get_closed_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            if (hours > 0 and days == 0) or (days > 0 and hours == 0):
+                time_filter = f'-{hours} hour' if hours else f'-{days} day'
+                query = 'SELECT COUNT(*) FROM tickets WHERE status=? AND created_at >= datetime("now", ?)'
+                cursor.execute(query, ('closed', time_filter))
+            else:
+                raise ValueError("Either hours or days must be specified, not both.")
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+        except ValueError as ve:
+            print(f"Value error: {ve}")
+            return 0
+
+    def get_average_resolution_time(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('SELECT AVG(julianday(created_at) - julianday(created_at)) FROM tickets WHERE status=?', ('closed',))
+            result = cursor.fetchone()[0]
+            return result if result else 0
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_ticket_stats(self):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute('SELECT status, COUNT(*) FROM tickets GROUP BY status')
+            data = cursor.fetchall()
+            stats = {'open': 0, 'active': 0, 'closed': 0}
+            for status, count in data:
+                if status in stats:
+                    stats[status] += count
+            return stats
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return {}
+
+```gui.py
+'''Implements the graphical user interface using Tkinter.'''
+import tkinter as tk
+from tkinter import messagebox
+
+class TicketManagementApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Ticket Management System")
+
+        self.user_role = tk.IntVar()
+
+        # Login UI
+        self.create_login_ui()
+
+    def create_login_ui(self):
+        login_frame = tk.Frame(self.root)
+        login_frame.pack(pady=20)
+
+        tk.Label(login_frame, text="Select User Role:").grid(row=0, column=0, padx=10)
+        tk.Radiobutton(login_frame, text="Helpdesk Staff", variable=self.user_role, value=1).grid(row=0, column=1)
+        tk.Radiobutton(login_frame, text="Simple User", variable=self.user_role, value=2).grid(row=0, column=2)
+
+        tk.Button(login_frame, text="Login", command=self.login).grid(row=0, column=3, padx=10)
+
+    def login(self):
+        if self.user_role.get() == 1:
+            messagebox.showinfo("Login Successful", "Logged in as Helpdesk Staff")
+            # Implement further actions for helpdesk staff
+        elif self.user_role.get() == 2:
+            messagebox.showinfo("Login Successful", "Logged in as Simple User")
+            # Implement further actions for simple user
+        else:
+            messagebox.showerror("Error", "Please select a user role")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TicketManagementApp(root)
+    root.mainloop()
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Sure, here's the reformatted code based on your requirements:
+
+### main.py
+```python
+'''
+Implements the graphical user interface using Tkinter.
+Allows users to log in as helpdesk staff or simple users, manage tickets,
+and perform data analysis.
+'''
+import tkinter as tk
+from tkinter import messagebox, ttk
+from database_manager import DatabaseManager
+from microservices import Microservices
+from user_manager import UserRole, UserManager
+
+class TicketApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Ticket Management System")
+        self.user_role = None  # This will be set when the user logs in
+        self.db_manager = DatabaseManager()
+        self.microservices = Microservices()
+        self.user_manager = UserManager()
+        self.create_tickets_table()
+
+    def create_tickets_table(self):
+        cursor = self.conn.cursor()
+        query = '''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                status TEXT DEFAULT 'open',
+                last_modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+        cursor.execute(query)
+        self.conn.commit()
+
+    def add_ticket(self, title, description):
+        cursor = self.conn.cursor()
+        query = 'INSERT INTO tickets (title, description) VALUES (?, ?)'
+        cursor.execute(query, (title, description))
+        self.conn.commit()
+
+    def get_all_tickets(self):
+        cursor = self.conn.cursor()
+        query = 'SELECT * FROM tickets'
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def change_ticket_status(self, ticket_id, new_status):
+        cursor = self.conn.cursor()
+        query = 'UPDATE tickets SET status=?, last_modified_at=CURRENT_TIMESTAMP WHERE id=?'
+        cursor.execute(query, (new_status, ticket_id))
+        self.conn.commit()
+
+# Ensure the database connection is closed when done
+def close_connection():
+    global conn
+    if conn:
+        conn.close()
+```
+
+### microservices.py
+```python
+'''
+Provides various analysis functionalities on the ticket data.
+Includes methods to get counts of open, active and closed tickets,
+average resolution time, etc.
+'''
+import sqlite3
+from datetime import datetime, timedelta
+
+class Microservices:
+    def __init__(self):
+        self.conn = sqlite3.connect('tickets.db')
+
+    def get_open_ticket_count(self, hours=0, days=0):
+        cursor = self.conn.cursor()
+        try:
+            time_filter = datetime.now() - timedelta(hours=hours, days=days)
+            query = 'SELECT COUNT(*) FROM tickets WHERE status=? AND opened_at >= ?'
+            cursor.execute(query, ('open', time_filter))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_active_ticket_count(self):
+        cursor = self.conn.cursor()
+        try:
+            query = 'SELECT COUNT(*) FROM tickets WHERE status=?'
+            cursor.execute(query, ('active',))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_closed_ticket_count(self):
+        cursor = self.conn.cursor()
+        try:
+            query = 'SELECT COUNT(*) FROM tickets WHERE status=?'
+            cursor.execute(query, ('closed',))
+            return cursor.fetchone()[0]
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_average_resolution_time(self):
+        cursor = self.conn.cursor()
+        try:
+            query = '''
+                SELECT AVG(julianday(last_modified_at) - julianday(opened_at)) AS avg_resolution_time
+                FROM tickets WHERE status='closed'
+            '''
+            cursor.execute(query)
+            result = cursor.fetchone()[0]
+            return result if result else 0
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return 0
+
+    def get_ticket_status_count(self):
+        cursor = self.conn.cursor()
+        try:
+            query = 'SELECT status, COUNT(*) FROM tickets GROUP BY status'
+            cursor.execute(query)
+            return cursor.fetchall()
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+            return []
+```
+
+### user.py
+```python
+'''
+Defines the User class with basic attributes and methods.
+'''
+class User:
+    def __init__(self, username, email):
+        self.username = username
+        self.email = email
+
+    def get_username(self):
+        return self.username
+
+    def get_email(self):
+        return self.email
+
+    def set_username(self, username):
+        self.username = username
+
+    def set_email(self, email):
+        self.email = email
+```
+
+### database_manager.py
+```python
+'''
+Manages interactions with the SQLite database.
+Handles creating, reading, updating, and deleting tickets.
+'''
+import sqlite3
+
+class DatabaseManager:
+    def __init__(self):
+        self.conn = sqlite3.connect('tickets.db')
+        self.create_tickets_table()
+
+    def create_tickets_table(self):
+        cursor = self.conn.cursor()
+        query = '''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                status TEXT DEFAULT 'open',
+                last_modified_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+        cursor.execute(query)
+        self.conn.commit()
+
+    def add_ticket(self, title, description):
+        cursor = self.conn.cursor()
+        query = 'INSERT INTO tickets (title, description) VALUES (?, ?)'
+        cursor.execute(query, (title, description))
+        self.conn.commit()
+
+    def get_all_tickets(self):
+        cursor = self.conn.cursor()
+        query = 'SELECT * FROM tickets'
+        cursor.execute(query)
+        return cursor.fetchall()
+
+    def change_ticket_status(self, ticket_id, new_status):
+        cursor = self.conn.cursor()
+        query = 'UPDATE tickets SET status=?, last_modified_at=CURRENT_TIMESTAMP WHERE id=?'
+        cursor.execute(query, (new_status, ticket_id))
+        self.conn.commit()
+
+# Ensure the database connection is closed when done
+def close_connection():
+    global conn
+    if conn:
+        conn.close()
+```

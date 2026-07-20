@@ -1,0 +1,140 @@
+
+## context
+{"Language":"en_us","Programming Language":"Python","Original Requirements":"Create a snake game in Python","Product Goals":["Create an engaging user experience with smooth snake movement and collision detection","Improve accessibility by allowing users to restart the game easily and view their current score","Design a visually appealing UI with clear instructions and responsive graphics"],"User Stories":["As a player, I want to be able to control the snake using arrow keys","As a player, I want to see my current score displayed on the screen","As a player, I want to be notified when the game is over and have the option to restart","As a player, I want the game to generate food at random positions on the board without overlapping with the snake's body","As a player, I want the snake to grow in length when it consumes food"],"Competitive Analysis":["Snake Game A: Simple graphics, lacks smooth animation and responsive controls","Slither.io: Engaging multiplayer experience with beautiful graphics, but limited single-player mode","Snake Game B: Basic UI, lacks clear instructions and scoring system","Agar.io: Addictive gameplay with simple yet appealing graphics, but not a traditional snake game","Google Snake Game: Classic snake game with simple graphics, but limited features and no multiplayer"],"Competitive Quadrant Chart":"quadrantChart\n    title \"Engagement and Graphics of Snake Games\"\n    x-axis \"Low Engagement\" --> \"High Engagement\"\n    y-axis \"Low Graphics Quality\" --> \"High Graphics Quality\"\n    quadrant-1 \"Need to Improve\"\n    quadrant-2 \"Competitive Advantage\"\n    quadrant-3 \"Laggards\"\n    quadrant-4 \"Leaders\"\n    \"Snake Game A\": [0.2, 0.4]\n    \"Slither.io\": [0.8, 0.9]\n    \"Snake Game B\": [0.1, 0.3]\n    \"Agar.io\": [0.7, 0.6]\n    \"Google Snake Game\": [0.5, 0.5]\n    \"Our Target Product\": [0.6, 0.8]","Requirement Analysis":"The game requires a grid-based board with a snake that can move in four directions (up, down, left, right) using arrow keys. The game should generate food at random positions on the board and increase the snake's length when it consumes the food. Collision detection is necessary to end the game when the snake hits the boundary or its own body. A scoring system and clear instructions are also essential for an engaging user experience.","Requirement Pool":[["P0","Implement a grid-based game board with a defined size (e.g., 10x10)"],["P0","Create a snake object that can move in four directions using arrow keys"],["P1","Generate food at random positions on the game board without overlapping with the snake's body"],["P1","Implement collision detection to end the game when the snake hits the boundary or its own body"],["P2","Design a visually appealing UI with clear instructions and a scoring system"]],"UI Design draft":"The game will feature a simple grid-based board with a black background and white grid lines. The snake will be represented by a green line, and the food will be a red dot. The current score will be displayed in the top-left corner of the screen, and clear instructions will be provided at the start of the game.","Anything UNCLEAR":"The project requirements do not specify any particular graphics library or framework for Python. It is assumed that a library like Pygame will be used for creating the game UI and handling user input."}
+
+-----
+
+## format example
+[CONTENT]
+{
+    "Implementation approach": "We will ...",
+    "File list": [
+        "main.py",
+        "game.py"
+    ],
+    "Data structures and interfaces": "\nclassDiagram\n    class Main {\n        -SearchEngine search_engine\n        +main() str\n    }\n    class SearchEngine {\n        -Index index\n        -Ranking ranking\n        -Summary summary\n        +search(query: str) str\n    }\n    class Index {\n        -KnowledgeBase knowledge_base\n        +create_index(data: dict)\n        +query_index(query: str) list\n    }\n    class Ranking {\n        +rank_results(results: list) list\n    }\n    class Summary {\n        +summarize_results(results: list) str\n    }\n    class KnowledgeBase {\n        +update(data: dict)\n        +fetch_data(query: str) dict\n    }\n    Main --> SearchEngine\n    SearchEngine --> Index\n    SearchEngine --> Ranking\n    SearchEngine --> Summary\n    Index --> KnowledgeBase\n",
+    "Program call flow": "\nsequenceDiagram\n    participant M as Main\n    participant SE as SearchEngine\n    participant I as Index\n    participant R as Ranking\n    participant S as Summary\n    participant KB as KnowledgeBase\n    M->>SE: search(query)\n    SE->>I: query_index(query)\n    I->>KB: fetch_data(query)\n    KB-->>I: return data\n    I-->>SE: return results\n    SE->>R: rank_results(results)\n    R-->>SE: return ranked_results\n    SE->>S: summarize_results(ranked_results)\n    S-->>SE: return summary\n    SE-->>M: return summary\n",
+    "Anything UNCLEAR": "Clarification needed on third-party API integration, ..."
+}
+[/CONTENT]
+
+## nodes: "<node>: <type>  # <instruction>"
+- Implementation approach: <class 'str'>  # Analyze the difficult points of the requirements, select the appropriate open-source framework
+- File list: typing.List[str]  # Only need relative paths. ALWAYS write a main.py or app.py here
+- Data structures and interfaces: <class 'str'>  # Use mermaid classDiagram code syntax, including classes, method(__init__ etc.) and functions with type annotations, CLEARLY MARK the RELATIONSHIPS between classes, and comply with PEP8 standards. The data structures SHOULD BE VERY DETAILED and the API should be comprehensive with a complete design.
+- Program call flow: <class 'str'>  # Use sequenceDiagram code syntax, COMPLETE and VERY DETAILED, using CLASSES AND API DEFINED ABOVE accurately, covering the CRUD AND INIT of each object, SYNTAX MUST BE CORRECT.
+- Anything UNCLEAR: <class 'str'>  # Mention unclear project aspects, then try to clarify it.
+
+
+## constraint
+Language: Please use the same language as Human INPUT.
+Format: output wrapped inside [CONTENT][/CONTENT] like format example, nothing else.
+
+## action
+Follow instructions of nodes, generate output and make sure it follows the format example.
+
+
+{
+    "Implementation approach": "We will utilize the Pygame library to create a grid-based game board with smooth snake movement and collision detection. The game will feature a simple yet visually appealing UI with clear instructions and a scoring system.",
+    "File list": [
+        "main.py",
+        "game.py",
+        "snake.py",
+        "food.py"
+    ],
+    "Data structures and interfaces": "\nclassDiagram\n    class Game {\n        -board: Board\n        -snake: Snake\n        -food: Food\n        -score: int\n        +__init__() None\n        +run() None\n        +handle_events() None\n        +update() None\n        +render() None\n    }\n    class Board {\n        -width: int\n        -height: int\n        -grid: list\n        +__init__(width: int, height: int) None\n        +draw_grid() None\n    }\n    class Snake {\n        -body: list\n        -direction: str\n        +__init__() None\n        +move() None\n        +grow() None\n    }\n    class Food {\n        -x: int\n        -y: int\n        +__init__() None\n        +generate_new_position() None\n    }\n    Game --> Board\n    Game --> Snake\n    Game --> Food\n    Snake --> Board\n",
+    "Program call flow": "\nsequenceDiagram\n    participant G as Game\n    participant B as Board\n    participant S as Snake\n    participant F as Food\n    G->>G: __init__()\n    G->>B: draw_grid()\n    G->>S: move()\n    G->>F: generate_new_position()\n    G->>G: handle_events()\n    G->>G: update()\n    G->>G: render()\n    S->>B: check_collision()\n    F->>S: check_consumption()\n    G->>G: run()\n",
+    "Anything UNCLEAR": "Clarification needed on the specific graphics library or framework for Python, but Pygame is assumed to be used. Additionally, the project requirements do not specify any particular audio effects or soundtracks."
+}
+
+
+## context
+{"Implementation approach":"We will utilize the Pygame library to create a grid-based game board with smooth snake movement and collision detection. The game will feature a simple yet visually appealing UI with clear instructions and a scoring system.","File list":["main.py","game.py","snake.py","food.py"],"Data structures and interfaces":"\nclassDiagram\n    class Game {\n        -board: Board\n        -snake: Snake\n        -food: Food\n        -score: int\n        +__init__() None\n        +run() None\n        +handle_events() None\n        +update() None\n        +render() None\n    }\n    class Board {\n        -width: int\n        -height: int\n        -grid: list\n        +__init__(width: int, height: int) None\n        +draw_grid() None\n    }\n    class Snake {\n        -body: list\n        -direction: str\n        +__init__() None\n        +move() None\n        +grow() None\n    }\n    class Food {\n        -x: int\n        -y: int\n        +__init__() None\n        +generate_new_position() None\n    }\n    Game --> Board\n    Game --> Snake\n    Game --> Food\n    Snake --> Board\n","Program call flow":"\nsequenceDiagram\n    participant G as Game\n    participant B as Board\n    participant S as Snake\n    participant F as Food\n    G->>G: __init__()\n    G->>B: draw_grid()\n    G->>S: move()\n    G->>F: generate_new_position()\n    G->>G: handle_events()\n    G->>G: update()\n    G->>G: render()\n    S->>B: check_collision()\n    F->>S: check_consumption()\n    G->>G: run()\n","Anything UNCLEAR":"Clarification needed on the specific graphics library or framework for Python, but Pygame is assumed to be used. Additionally, the project requirements do not specify any particular audio effects or soundtracks."}
+
+-----
+
+## format example
+[CONTENT]
+{
+    "Required Python packages": [
+        "flask==1.1.2",
+        "bcrypt==3.2.0"
+    ],
+    "Required Other language third-party packages": [
+        "No third-party dependencies required"
+    ],
+    "Logic Analysis": [
+        [
+            "game.py",
+            "Contains Game class and ... functions"
+        ],
+        [
+            "main.py",
+            "Contains main function, from game import Game"
+        ]
+    ],
+    "Task list": [
+        "game.py",
+        "main.py"
+    ],
+    "Full API spec": "openapi: 3.0.0 ...",
+    "Shared Knowledge": "`game.py` contains functions shared across the project.",
+    "Anything UNCLEAR": "Clarification needed on how to start and initialize third-party libraries."
+}
+[/CONTENT]
+
+## nodes: "<node>: <type>  # <instruction>"
+- Required Python packages: typing.List[str]  # Provide required Python packages in requirements.txt format.
+- Required Other language third-party packages: typing.List[str]  # List down the required packages for languages other than Python.
+- Logic Analysis: typing.List[typing.List[str]]  # Provide a list of files with the classes/methods/functions to be implemented, including dependency analysis and imports.
+- Task list: typing.List[str]  # Break down the tasks into a list of filenames, prioritized by dependency order.
+- Full API spec: <class 'str'>  # Describe all APIs using OpenAPI 3.0 spec that may be used by both frontend and backend. If front-end and back-end communication is not required, leave it blank.
+- Shared Knowledge: <class 'str'>  # Detail any shared knowledge, like common utility functions or configuration variables.
+- Anything UNCLEAR: <class 'str'>  # Mention any unclear aspects in the project management context and try to clarify them.
+
+
+## constraint
+Language: Please use the same language as Human INPUT.
+Format: output wrapped inside [CONTENT][/CONTENT] like format example, nothing else.
+
+## action
+Follow instructions of nodes, generate output and make sure it follows the format example.
+
+
+{
+    "Required Python packages": [
+        "pygame==2.0.1"
+    ],
+    "Required Other language third-party packages": [
+        "No third-party dependencies required"
+    ],
+    "Logic Analysis": [
+        [
+            "game.py",
+            "Contains Game class with methods: __init__, run, handle_events, update, render"
+        ],
+        [
+            "snake.py",
+            "Contains Snake class with methods: __init__, move, grow"
+        ],
+        [
+            "food.py",
+            "Contains Food class with methods: __init__, generate_new_position"
+        ],
+        [
+            "board.py",
+            "Contains Board class with methods: __init__, draw_grid"
+        ]
+    ],
+    "Task list": [
+        "board.py",
+        "snake.py",
+        "food.py",
+        "game.py",
+        "main.py"
+    ],
+    "Full API spec": "",
+    "Shared Knowledge": "`game.py` contains the main game loop and handles user input, `snake.py` and `food.py` contain classes for snake and food objects, `board.py` contains the game board representation.",
+    "Anything UNCLEAR": "Clarification needed on the specific graphics library or framework for Python, but Pygame is assumed to be used. Additionally, the project requirements do not specify any particular audio effects or soundtracks."
+}
+

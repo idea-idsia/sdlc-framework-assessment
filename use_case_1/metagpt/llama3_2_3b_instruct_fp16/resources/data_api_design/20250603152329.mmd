@@ -1,0 +1,52 @@
+
+class SnakeGame:
+    def __init__(self, width=800, height=600):
+        self.width = width
+        self.height = height
+        self.snake = [(200, 200), (220, 200), (240, 200)]
+        self.direction = 'RIGHT'
+        self.food = None
+
+class Direction:
+    UP = 'UP'
+    DOWN = 'DOWN'
+    LEFT = 'LEFT'
+    RIGHT = 'RIGHT'
+
+class Game:
+    def __init__(self):
+        self.snake_game = SnakeGame()
+        self.score = 0
+        self.game_over = False
+
+    def update(self):
+        if not self.game_over:
+            self.snake_game.update()
+            self.check_collision()
+            self.check_score()
+
+    def check_collision(self):
+        head_x, head_y = self.snake_game.snake[-1]
+        if (head_x < 0 or head_x >= self.snake_game.width or
+            head_y < 0 or head_y >= self.snake_game.height or
+            self.snake_game.snake[-1] in self.snake_game.snake[:-1]):
+            self.game_over = True
+
+    def check_score(self):
+        if not self.game_over:
+            self.score += 1
+
+            pass
+
+class UI:
+    def __init__(self, game):
+        self.game = game
+        self.screen = pygame.display.set_mode((self.game.snake_game.width, self.game.snake_game.height))
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        for x, y in self.game.snake_game.snake:
+            pygame.draw.rect(self.screen, (0, 255, 0), (x, y, 10, 10))
+        if self.game.food:
+            pygame.draw.rect(self.screen, (255, 0, 0), (self.game.food[0], self.game.food[1], 10, 10))
+        pygame.display.update()

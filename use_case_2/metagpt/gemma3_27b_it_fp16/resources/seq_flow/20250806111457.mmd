@@ -1,0 +1,28 @@
+
+sequenceDiagram
+    participant M as Main
+    participant TS as TicketService
+    participant AS as AnalyticsService
+    participant DB as Database
+    participant UI as UserInterface
+
+    UI->>M: Request to create a ticket
+    M->>TS: create_ticket(ticket_data)
+    TS->>DB: insert_data(tickets, ticket_data)
+    DB-->>TS: return ticket_id
+    TS-->>M: return ticket_id
+    M-->>UI: return ticket_id
+
+    UI->>M: Request to get all open tickets
+    M->>TS: get_all_tickets(status='open')
+    TS->>DB: execute_query(SELECT * FROM tickets WHERE status='open')
+    DB-->>TS: return list of tickets
+    TS-->>M: return list of tickets
+    M-->>UI: return list of tickets
+
+    UI->>M: Request analytics data (ticket counts by period)
+    M->>AS: get_ticket_counts_by_period(period)
+    AS->>DB: execute_query(SELECT COUNT(*) FROM tickets WHERE opening_date BETWEEN ... AND ... AND closing_date IS NULL)
+    DB-->>AS: return count
+    AS-->>M: return count
+    M-->>UI: return count

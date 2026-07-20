@@ -1,0 +1,52 @@
+
+NOTICE
+Role: You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## Design
+{"Implementation approach":"We will build the game as a small, selfâcontained console application using the standard `curses` library for realâtime keyboard input and screen drawing. The core logic will be split into a handful of focused classes:\n\n* **Game** â owns the main loop, coordinates input, update and rendering, and manages the overall state (running, paused, gameâover).\n* **Snake** â stores the ordered list of grid coordinates that make up the snake, handles movement, growth and collision checks.\n* **Food** â keeps the current food position and can generate a new one that never overlaps the snake.\n* **Grid** â represents the 10Ã10 board, provides bounds checking and a helper to convert coordinates to screen positions.\n* **Renderer** â draws the grid, snake, food and UI elements (score, gameâover message) onto the curses window.\n* **InputHandler** â translates arrowâkey events into direction changes while preventing 180Â° reversals.\n\nThe game loop will run at a fixed tick rate (e.g. 10 frames per second). Each tick we:\n1. Poll for a key press.\n2. Update the snakeâs direction.\n3. Move the snake forward.\n4. Check for collisions (wall, self, food).\n5. Grow the snake and update the score if food is eaten.\n6. Render the updated state.\n\nThis separation keeps the code testable, readable and easily extensible (e.g. adding levels or AI). All state is kept in plain Python data structures (lists, tuples, ints) so no external dependencies are required beyond the standard library.\n\n","File list":["main.py","game.py"],"Data structures and interfaces":"\nclassDiagram\n    class Game {\n        -grid: Grid\n        -snake: Snake\n        -food: Food\n        -renderer: Renderer\n        -input_handler: InputHandler\n        -score: int\n        -running: bool\n        +__init__(window: curses.window)\n        +start() void\n        +handle_input() void\n        +update() void\n        +render() void\n        +game_over() void\n    }\n    class Snake {\n        -body: List[Tuple[int,int]]\n        -direction: Tuple[int,int]\n        +__init__(start_pos: Tuple[int,int], start_dir: Tuple[int,int])\n        +move() void\n        +grow() void\n        +set_direction(new_dir: Tuple[int,int]) void\n        +collides_with_self() bool\n        +collides_with_wall(grid: Grid) bool\n        +head() Tuple[int,int]\n    }\n    class Food {\n        -position: Tuple[int,int]\n        +__init__(grid: Grid, snake: Snake)\n        +generate_new(grid: Grid, snake: Snake) void\n        +position() Tuple[int,int]\n    }\n    class Grid {\n        -width: int\n        -height: int\n        +__init__(width: int, height: int)\n        +in_bounds(pos: Tuple[int,int]) bool\n        +to_screen_coords(pos: Tuple[int,int]) Tuple[int,int]\n    }\n    class Renderer {\n        -window: curses.window\n        +__init__(window: curses.window)\n        +draw(grid: Grid, snake: Snake, food: Food, score: int, game_over: bool) void\n        +clear() void\n    }\n    class InputHandler {\n        -last_direction: Tuple[int,int]\n        +__init__()\n        +get_direction(key: int) Tuple[int,int]\n    }\n    Game --> Snake\n    Game --> Food\n    Game --> Grid\n    Game --> Renderer\n    Game --> InputHandler\n    Snake --> Grid\n    Food --> Grid\n    Renderer --> Grid\n    Renderer --> Snake\n    Renderer --> Food\n","Program call flow":"\nsequenceDiagram\n    participant M as main\n    participant G as Game\n    participant I as InputHandler\n    participant S as Snake\n    participant F as Food\n    participant R as Renderer\n    participant Gd as Grid\n\n    M->>G: __init__(curses_window)\n    G->>Gd: __init__(10,10)\n    G->>S: __init__(center, RIGHT)\n    G->>F: __init__(Gd, S)\n    G->>R: __init__(curses_window)\n    G->>I: __init__()\n    G->>G: start()\n\n    loop every tick\n        G->>I: get_direction(key)\n        I->>G: set_direction\n        G->>S: move()\n        G->>S: collides_with_self() -> bool\n        alt collision\n            G->>G: game_over()\n            G->>R: draw(..., game_over=true)\n            G->>G: break loop\n        else\n            G->>F: position()\n            alt ate food\n                G->>S: grow()\n                G->>S: score++\n                G->>F: generate_new(Gd, S)\n            end\n            G->>R: draw(..., game_over=false)\n        end\n    end\n","Anything UNCLEAR":"The specification mentions \"optional animations for movement and growth\" but does not detail the desired effect. In a console environment, we can simulate a simple animation by briefly flashing the new head position or adding a short delay after growth. If more elaborate animations (e.g., smooth scrolling) are required, a different rendering backend (e.g., Pygame) would be necessary. Clarify whether the simple console animation suffices or if a graphical window is expected."}
+
+## Task
+{"Required Python packages":["No external packages required; uses only the standard library (curses, typing, etc.)"],"Required Other language third-party packages":["No thirdâparty dependencies required"],"Logic Analysis":[["main.py","Imports Game from game.py, initializes curses, creates Game instance, calls start()"],["game.py","Defines Game class: manages main loop, holds Grid, Snake, Food, Renderer, InputHandler, score, running flag; imports all component classes"],["snake.py","Defines Snake class: body list, direction tuple, move(), grow(), set_direction(), collides_with_self(), collides_with_wall(), head()"],["food.py","Defines Food class: position tuple, generate_new() that picks a random free cell, position() accessor"],["grid.py","Defines Grid class: width, height, in_bounds(), to_screen_coords()"],["renderer.py","Defines Renderer class: draws grid, snake, food, score, gameâover message; uses curses window"],["input_handler.py","Defines InputHandler class: get_direction() translates key codes to direction tuples, prevents 180Â° reversal"]],"Task list":["main.py","game.py","snake.py","food.py","grid.py","renderer.py","input_handler.py"],"Full API spec":"","Shared Knowledge":"All state is stored in plain Python data structures (lists, tuples, ints). The game is a console application using the curses library; no external GUI frameworks are required. Each component is isolated to aid testing and future extension (e.g., adding levels or AI).","Anything UNCLEAR":"The specification mentions optional animations for movement and growth but does not detail the desired effect. In a console environment, a simple flash or brief delay can simulate animation. If a richer graphical animation is required, a different rendering backend (e.g., Pygame) would be necessary. Clarify whether the simple console animation suffices or a graphical window is expected."}
+
+## Legacy Code
+```Code
+
+```
+
+## Debug logs
+```text
+
+
+
+```
+
+## Bug Feedback logs
+```text
+
+```
+
+# Format example
+## Code: main.py
+```python
+## main.py
+...
+```
+
+# Instruction: Based on the context, follow "Format example", write code.
+
+## Code: main.py. Write code with triple quoto, based on the following attentions and context.
+1. Only One file: do your best to implement THIS ONLY ONE FILE.
+2. COMPLETE CODE: Your code will be part of the entire project, so please implement complete, reliable, reusable code snippets.
+3. Set default value: If there is any setting, ALWAYS SET A DEFAULT VALUE, ALWAYS USE STRONG TYPE AND EXPLICIT VARIABLE. AVOID circular import.
+4. Follow design: YOU MUST FOLLOW "Data structures and interfaces". DONT CHANGE ANY DESIGN. Do not use public member functions that do not exist in your design.
+5. CAREFULLY CHECK THAT YOU DONT MISS ANY NECESSARY CLASS/FUNCTION IN THIS FILE.
+6. Before using a external variable/module, make sure you import it first.
+7. Write out EVERY CODE DETAIL, DON'T LEAVE TODO.
+
+
+
+
+

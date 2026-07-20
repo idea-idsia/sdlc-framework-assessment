@@ -1,0 +1,52 @@
+
+NOTICE
+Role: You are a professional engineer; the main goal is to write google-style, elegant, modular, easy to read and maintain code
+Language: Please use the same language as the user requirement, but the title and code should be still in English. For example, if the user speaks Chinese, the specific text of your answer should also be in Chinese.
+ATTENTION: Use '##' to SPLIT SECTIONS, not '#'. Output format carefully referenced "Format example".
+
+# Context
+## Design
+{"Implementation approach":"We will create a snake game using the Pygame library in Python.","File list":["main.py","snake_game.py"],"Data structures and interfaces":"\nclass SnakeGame:\n    def __init__(self, width=800, height=600):\n        self.width = width\n        self.height = height\n        self.snake = [(200, 200), (220, 200), (240, 200)]\n        self.direction = 'RIGHT'\n        self.food = None\n\nclass Direction:\n    UP = 'UP'\n    DOWN = 'DOWN'\n    LEFT = 'LEFT'\n    RIGHT = 'RIGHT'\n\nclass Game:\n    def __init__(self):\n        self.snake_game = SnakeGame()\n        self.score = 0\n        self.game_over = False\n\n    def update(self):\n        if not self.game_over:\n            self.snake_game.update()\n            self.check_collision()\n            self.check_score()\n\n    def check_collision(self):\n        head_x, head_y = self.snake_game.snake[-1]\n        if (head_x < 0 or head_x >= self.snake_game.width or\n            head_y < 0 or head_y >= self.snake_game.height or\n            self.snake_game.snake[-1] in self.snake_game.snake[:-1]):\n            self.game_over = True\n\n    def check_score(self):\n        if not self.game_over:\n            self.score += 1\n\n            pass\n\nclass UI:\n    def __init__(self, game):\n        self.game = game\n        self.screen = pygame.display.set_mode((self.game.snake_game.width, self.game.snake_game.height))\n\n    def draw(self):\n        self.screen.fill((0, 0, 0))\n        for x, y in self.game.snake_game.snake:\n            pygame.draw.rect(self.screen, (0, 255, 0), (x, y, 10, 10))\n        if self.game.food:\n            pygame.draw.rect(self.screen, (255, 0, 0), (self.game.food[0], self.game.food[1], 10, 10))\n        pygame.display.update()\n","Program call flow":"\nsequenceDiagram\n participant G as Game\n participant UI as UI\n participant S as SnakeGame\n G->>UI: update()\n UI->>S: draw()\n S->>G: update_game_state()\n G-->>UI: game_over\n if game_over:\n     UI->>S: reset_snake_game()\n sequenceDiagram\n participant R as Direction\n R->>S: change_direction(direction)\n S->>R: get_current_direction()\n","Anything UNCLEAR":"Clarification needed on how to handle user input for changing direction."}
+
+## Task
+{"Required Python packages":["pygame==2.1.2","typing"],"Required Other language third-party packages":["No third-party dependencies required"],"Logic Analysis":[["snake_game.py","Contains SnakeGame class and Direction enum"],["main.py","Contains Game class, UI class, and main function"]],"Task list":["snake_game.py","main.py"],"Full API spec":"","Shared Knowledge":"`snake_game.py` contains functions shared across the project.","Anything UNCLEAR":"Clarification needed on how to handle user input for changing direction."}
+
+## Legacy Code
+```Code
+
+```
+
+## Debug logs
+```text
+
+
+
+```
+
+## Bug Feedback logs
+```text
+
+```
+
+# Format example
+## Code: snake_game.py
+```python
+## snake_game.py
+...
+```
+
+# Instruction: Based on the context, follow "Format example", write code.
+
+## Code: snake_game.py. Write code with triple quoto, based on the following attentions and context.
+1. Only One file: do your best to implement THIS ONLY ONE FILE.
+2. COMPLETE CODE: Your code will be part of the entire project, so please implement complete, reliable, reusable code snippets.
+3. Set default value: If there is any setting, ALWAYS SET A DEFAULT VALUE, ALWAYS USE STRONG TYPE AND EXPLICIT VARIABLE. AVOID circular import.
+4. Follow design: YOU MUST FOLLOW "Data structures and interfaces". DONT CHANGE ANY DESIGN. Do not use public member functions that do not exist in your design.
+5. CAREFULLY CHECK THAT YOU DONT MISS ANY NECESSARY CLASS/FUNCTION IN THIS FILE.
+6. Before using a external variable/module, make sure you import it first.
+7. Write out EVERY CODE DETAIL, DON'T LEAVE TODO.
+
+
+
+
+

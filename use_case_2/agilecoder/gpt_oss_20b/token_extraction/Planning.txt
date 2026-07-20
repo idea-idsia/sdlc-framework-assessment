@@ -1,0 +1,253 @@
+
+[You are a client. You employ AgileCoder, a software development company, to develop a product based on the following task description: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+You also require AgileCoder to obey the following requirements:
+1. The proposed features can be implementable,
+2. The product successfully runs without any errors,
+3. The product is be designed for ease of use,
+4. The product has a full of manual and relevant documentation.
+To achieve your goal, you must write a response based on your needs.]
+
+We need to decide which product modality best fits the customer's ticket‑management system.
+Given the requirements (GUI, database, micro‑services, data visualisation), I think an **Application** (Python) would be most appropriate, as it allows us to build the GUI, integrate the micro‑services, and provide real‑time dashboards.
+What do you think?
+
+
+[You are a client. You employ AgileCoder, a software development company, to develop a product based on the following task description: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+You also require AgileCoder to obey the following requirements:
+1. The proposed features can be implementable,
+2. The product successfully runs without any errors,
+3. The product is be designed for ease of use,
+4. The product has a full of manual and relevant documentation.
+To achieve your goal, you must write a response based on your needs.]
+
+**Product Backlog**
+
+| # | User Story / Feature | Priority | Notes |
+|---|----------------------|----------|-------|
+| 1 | **Login/Role Selection GUI** – A simple splash screen that lets the user choose “Simple User” or “Helpdesk Staff” (no authentication). | ⭐️⭐️⭐️⭐️⭐️ | Highest priority – provides entry point for all other functionality. |
+| 2 | **Database Schema** – Create a relational database (SQLite for dev, Postgres for prod) with tables: `tickets`, `messages`, `users` (role only). | ⭐️⭐️⭐️⭐️⭐️ | Must exist before any CRUD logic. |
+| 3 | **Ticket Model & Core Attributes** – Each ticket has: ID, description, category, status, opening_date, last_modified_date, closing_date, creator_role. | ⭐️⭐️⭐️⭐️⭐️ | Core domain data. |
+| 4 | **Automatic Category Assignment** – Based on keywords in the description, auto‑assign one of: *Facility*, *Technical IT*, *Services*. | ⭐️⭐️⭐️⭐️ | Critical for analytics; simple keyword list. |
+| 5 | **Ticket CRUD API Endpoints** – RESTful endpoints to create, read, update, delete tickets. | ⭐️⭐️⭐️⭐️ | Separate from UI – used by all front‑end screens. |
+| 6 | **Status Transition Rules** – Enforce that only helpdesk staff can move status: `open → active → closed`. | ⭐️⭐️⭐️⭐️ | Business rule enforcement. |
+| 7 | **Message Model & API** – Store threaded messages per ticket; endpoints to post and fetch messages. | ⭐️⭐️⭐️⭐️ | Enables communication. |
+| 8 | **Simple User Ticket UI** – List, create, view, and edit tickets with status restricted to `open` or `active`. | ⭐️⭐️⭐️⭐️ | Core user interaction. |
+| 9 | **Helpdesk Ticket UI** – List all tickets (`open`, `active`, `closed`), change status, and view message thread. | ⭐️⭐️⭐️⭐️ | Core staff interaction. |
+|10 | **Microservice 1 – Open Ticket Counter** – API to return number of tickets opened in the last *X* hours/days that are still open. | ⭐️⭐️⭐️⭐️ | Data‑driven KPI. |
+|11 | **Microservice 2 – Avg Resolution Time** – API to compute average time between `opening_date` and `closing_date` per opening month. | ⭐️⭐️⭐️⭐️ | Analytics. |
+|12 | **Microservice 3 – Category Cluster** – API to return count of active tickets per category. | ⭐️⭐️⭐️⭐️ | Analytics. |
+|13 | **Dashboard UI** – Visualise metrics from the three micro‑services (tables/graphs). | ⭐️⭐️⭐️⭐️ | Staff‑focused insight. |
+|14 | **Automated Tests** – Unit tests for API logic, integration tests for DB operations, and UI acceptance tests (pytest‑qt or similar). | ⭐️⭐️⭐️ | Ensure reliability. |
+|15 | **Code Review & Refactoring** – Static analysis, PEP‑8 compliance, and code review checklist. | ⭐️⭐️ | Maintain code quality. |
+|16 | **Docker & Deployment Scripts** – Dockerfile, docker‑compose for local dev, and CI pipeline config. | ⭐️ | Smooth deployment. |
+
+---
+
+**Acceptance Criteria**
+
+| # | Acceptance Criteria |
+|---|---------------------|
+| 1 | • A splash screen appears on launch.<br>• Two buttons: “Simple User” and “Helpdesk Staff”.<br>• Selecting a role opens the main application window.<br>• No username/password prompts. |
+| 2 | • `tickets` table contains columns: `id`, `description`, `category`, `status`, `opening_date`, `last_modified_date`, `closing_date`, `creator_role`.<br>• `messages` table contains: `id`, `ticket_id`, `author_role`, `content`, `created_at`.<br>• `users` table contains only `role` (enum).<br>• Database file (`db.sqlite`) created on first run. |
+| 3 | • Ticket object can be instantiated with description and creator_role.<br>• `status` defaults to “open”.<br>• `opening_date` set to current timestamp.<br>• `last_modified_date` and `closing_date` are nullable until updated. |
+| 4 | • Keyword list: “elevator”, “stairs”, “break” → *Facility*; “wifi”, “network”, “server” → *Technical IT*; “food”, “canteen”, “complaint” → *Services*.<br>• If no keyword matches, default to *Facility*.<br>• Category is stored in DB. |
+| 5 | • Endpoints: `POST /tickets`, `GET /tickets`, `GET /tickets/{id}`, `PUT /tickets/{id}`, `DELETE /tickets/{id}`.<br>• All CRUD operations return JSON with appropriate HTTP status codes.<br>• Validation: description not empty, status must be one of allowed values. |
+| 6 | • Only requests with `role=helpdesk` can update `status` to `active` or `closed`. <br>• Simple users cannot change status.<br>• Invalid status transitions return 400. |
+| 7 | • Endpoints: `POST /tickets/{id}/messages`, `GET /tickets/{id}/messages`.<br>• Message requires non‑empty content.<br>• `author_role` is inferred from the selected role. |
+| 8 | • Ticket list shows only tickets where `status` is `open` or `active` and `creator_role=SimpleUser`.<br>• Create button opens a form for description.<br>• Edit button allows changing description and updates `last_modified_date`.<br>• Status remains unchanged by simple users. |
+| 9 | • Ticket list shows all tickets regardless of status.<br>• Buttons to transition status (only enabled for valid next state).<br>• Double‑clicking a ticket opens its message thread and allows posting new messages.<br>• Helpdesk can view closed tickets but cannot edit them. |
+|10 | • `GET /analytics/open-tickets?period=last_24_hours` returns JSON `{count: N}`.<br>• Count includes tickets where `status != closed` and `opening_date >= now - period`. |
+|11 | • `GET /analytics/avg-resolution?month=2025-11` returns `{average_hours: X}`.<br>• Calculates mean of (`closing_date - opening_date`) for tickets closed in that month. |
+|12 | • `GET /analytics/active-by-category` returns `{Facility: N, "Technical IT": M, Services: K}`.<br>• Counts only tickets with `status=active`. |
+|13 | • Dashboard displays three panels: (1) Open tickets count, (2) Avg resolution time per month (bar chart), (3) Active tickets per category (pie chart).<br>• Each panel fetches data from corresponding micro‑service API.<br>• Refresh button updates all panels. |
+|14 | • Unit tests cover all CRUD functions, status transitions, and category assignment.<br>• Integration tests verify end‑to‑end API calls against a test database.<br>• UI tests confirm that role selection, ticket creation, status changes, and message posting work as expected. |
+|15 | • All code passes `flake8` and `pylint` with scores above 8.0.<br>• No functions longer than 30 lines; modules are under 500 lines.<br>• Peer review marks: “Approved” with zero critical comments. |
+|16 | • Dockerfile builds an image that runs the Flask (or FastAPI) back‑end and a simple PyQt or Tkinter front‑end.<br>• `docker‑compose.yml` starts database, back‑end, and front‑end services.<br>• CI pipeline builds, runs tests, and lints on every push. |
+
+These backlog items and acceptance criteria align with the team’s skill set, avoid advanced or unsupported features, and ensure a deliverable, testable, and maintainable ticket‑management system.
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Product Owner. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+AgileCoder is using Agile Scrum for software development.
+You are responsible for maximizing the value delivered by the team by ensuring that the team backlog is aligned with customer and stakeholder needs.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+**Highest‑priority comment:**
+The product backlog has not been shared, so I cannot verify that each task is feasible for the assigned roles or that no prohibited features (AI, animations, sound) are included.
+
+**Suggestion for revision:**
+Please provide the detailed product backlog (list of user stories, tasks, acceptance criteria, and assignment to team members). Once it’s available, I’ll review it against the regulations and give specific feedback.
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are a development team of 3 members, including a programmer, a software test engineer, and a code reviewer. All work at the AgileCoder where the people are using Agile Scrum for managing software development.
+You are a team with diverse skills from programming to testing and reviewing where each member has a certain set of skills and supports other members.
+For example, the programmer is strong on programming and implementing functions, the software test engineer is good at testing and fixing source code written by the programmer.
+You are responsible for completing all sprints by finishing all sprint backlogs correctly, thereby accomplishing the product backlog.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+**Product Backlog – Ticket Management Web Application**
+
+| Story ID | Title | Description | Acceptance Criteria | Tasks | Assignee |
+|----------|-------|-------------|---------------------|-------|----------|
+| **S1** | Login Page – Role Selection | Create a simple GUI that allows a user to choose whether to enter as a *Helpdesk Staff* or *Simple User*. No authentication or user‑management is required. | • A single window with two clearly labelled buttons: “Helpdesk” and “User”.<br>• Clicking a button opens the corresponding dashboard.<br>• No database lookup or password entry. | 1. Design the GUI layout with Tkinter (or PyQt).<br>2. Implement the two button callbacks.<br>3. Create placeholder windows for each role. | **Developer** |
+| **S2** | Ticket Creation (Simple User) | Enable a Simple User to create a new ticket with a description; the system auto‑assigns a category, status “open”, and timestamps. | • Ticket appears in the user’s “Open” list immediately.<br>• Status is “open”.<br>• Opening date equals current timestamp.<br>• Category is auto‑selected by keyword heuristics. | 1. Create ticket entry form.<br>2. Implement category inference logic.<br>3. Store ticket in the database.<br>4. Refresh user ticket list. | **Developer** |
+| **S3** | Ticket Viewing & Editing (Simple User) | Simple Users can view all their tickets with status “open” or “active” and edit the description. | • List shows ticket ID, status, description snippet, and timestamps.<br>• Selecting a ticket opens an edit dialog.<br>• After editing, last‑modified timestamp updates.<br>• User cannot edit “closed” tickets. | 1. Build ticket list view.<br>2. Implement edit dialog.<br>3. Validate user role and ticket status.<br>4. Persist changes to DB. | **Developer** |
+| **S4** | Ticket Viewing & Status Update (Helpdesk) | Helpdesk staff can view all tickets, change status from “open” → “active” or “active” → “closed”, and view timestamps. | • All tickets are listed.<br>• Status change buttons are enabled only for appropriate transitions.<br>• Closing date is set when status becomes “closed”.<br>• The UI reflects updated status instantly. | 1. Design helpdesk ticket list.<br>2. Implement status‑transition logic.<br>3. Update DB with new status and timestamps.<br>4. Add visual status indicators. | **Developer** |
+| **S5** | Ticket Messaging | Allow both Simple Users and Helpdesk staff to post free‑text messages under a ticket, with timestamp and author. | • Message list shows author, text, and timestamp.<br>• New messages appear immediately after posting.<br>• Messages are stored in the database linked to the ticket. | 1. Create message input field.<br>2. Design message list UI.<br>3. Store/retrieve messages from DB.<br>4. Refresh list after each post. | **Developer** |
+| **S6** | Ticket Attribute Management | Ensure all tickets automatically maintain status, category, opening, last‑modified, and closing dates. | • No manual entry required for timestamps.<br>• Category is derived automatically from description.<br>• Closing date only set when ticket becomes “closed”. | 1. Implement timestamp hooks in the database layer.<br>2. Code category inference algorithm.<br>3. Add data validation rules. | **Developer** |
+| **S7** | Database Schema & CRUD API | Design a relational schema (SQLite/PostgreSQL) and expose CRUD operations via a lightweight REST API (Flask/FastAPI). | • Schema tables: `tickets`, `messages`.<br>• API endpoints: `GET /tickets`, `POST /tickets`, `PUT /tickets/<id>`, `POST /tickets/<id>/messages`.<br>• All endpoints return JSON and proper HTTP status codes. | 1. Draft ER diagram.<br>2. Create SQL scripts for table creation.<br>3. Implement Flask/FastAPI routes.<br>4. Add unit tests for CRUD operations. | **Developer** |
+| **S8** | Micro‑service 1 – Unclosed Ticket Count | Provide a REST endpoint that returns the number of tickets opened in a user‑selected period that are not yet closed. | • Endpoint accepts query params: `start` and `end` (ISO‑8601).<br>• Returns JSON `{ "unclosed_count": <int> }`.<br>• Correctly handles empty periods. | 1. Write service logic to filter tickets by date and status.<br>2. Expose endpoint via FastAPI.<br>3. Write integration tests. | **Developer** |
+| **S9** | Micro‑service 2 – Avg Resolution Time by Month | Calculate average resolution time (closing‑opening) for each month of the year. | • Endpoint returns JSON mapping month to average minutes.<br>• Only includes tickets that have been closed.<br>• Handles division by zero (no closed tickets). | 1. Aggregate tickets by month.<br>2. Compute average duration.<br>3. Expose endpoint.<br>4. Test with sample data. | **Developer** |
+| **S10** | Micro‑service 3 – Active Tickets by Category | Cluster tickets by category and return count of active tickets per category. | • Endpoint returns `{ "facility": 12, "technical": 8, "services": 5 }` (example).<br>• Only includes tickets with status “active”. | 1. Group by category.<br>2. Count active tickets.<br>3. Expose endpoint.<br>4. Unit test. | **Developer** |
+| **S11** | API Gateway & CORS | Expose all services behind a single gateway and enable CORS for the web frontend. | • All endpoints accessible under `/api/`. <br>• CORS headers allow `http://localhost:8000`. | 1. Configure FastAPI CORS middleware.<br>2. Create gateway routes.<br>3. Test cross‑origin requests. | **Developer** |
+| **S12** | Helpdesk Dashboard (Visualization) | Build a dashboard page that consumes the three micro‑services and displays the data in simple charts (e.g., bar chart, pie chart). | • Dashboard shows: (a) unclosed tickets count, (b) avg resolution time per month, (c) active tickets per category.<br>• Charts update on button click. | 1. Design dashboard UI.<br>2. Implement REST calls to services.<br>3. Render charts using a lightweight library (e.g., Chart.js via Flask template).<br>4. Validate visual correctness. | **Developer** |
+| **S13** | Deployment & CI/CD | Automate build, test, and deployment to a Docker‑based environment. | • Dockerfile builds the application.<br>• CI pipeline runs tests on every commit.<br>• Deployment script starts containers. | 1. Write Dockerfile.<br>2. Configure GitHub Actions (or similar) for CI.<br>3. Create Docker Compose for local dev.<br>4. Test deployment locally. | **Developer** |
+| **S14** | Test Coverage & Documentation | Write unit and integration tests for all modules and produce API documentation. | • ≥ 80 % code coverage.<br>• API docs available via Swagger UI.<br>• README explains how to run tests and start the app. | 1. Use pytest for tests.<br>2. Add coverage reports.<br>3. Generate Swagger UI with FastAPI.<br>4. Draft README. | **Test Engineer** |
+| **S15** | Code Review & Refactoring | Review all code for style, performance, and security best practices; refactor where necessary. | • All linting rules pass (flake8, mypy).<br>• No obvious security issues (e.g., SQL injection, XSS). | 1. Run linters.<br>2. Perform manual code review.<br>3. Refactor problematic sections.<br>4. Approve merge. | **Code Reviewer** |
+
+---
+
+### Notes on Feasibility & Compliance
+
+- **No AI, animations or sound** are introduced; all UI elements are static and built with standard Python libraries (Tkinter/PyQt for GUI, FastAPI for API).
+- All database interactions are done via parameterised queries to avoid injection.
+- The product backlog is split into distinct user stories, each with clear acceptance criteria, tasks, and assignees, making it ready for sprint planning.
+- The micro‑services are lightweight and can be scaled independently if required.
+
+This backlog can now be used directly in your Agile planning tool, assigned to the development team, and tracked throughout the sprint.

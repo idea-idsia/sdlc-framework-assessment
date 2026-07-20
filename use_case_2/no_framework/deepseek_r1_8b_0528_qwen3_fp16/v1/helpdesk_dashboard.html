@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helpdesk Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .dashboard-header h1 {
+            color: #333;
+        }
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            width: 30%;
+            margin-bottom: 20px;
+        }
+        .stat-card h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .stat-card p {
+            font-size: 2em;
+            color: #333;
+        }
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .ticket-card {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .ticket-card:hover {
+            transform: translateY(-5px);
+        }
+        .ticket-card h3 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .ticket-card p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .ticket-card .time {
+            color: #888;
+            font-size: 0.9em;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .flash-messages {
+            color: red;
+            margin-bottom: 15px;
+        }
+        .api-section {
+            margin-top: 50px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .api-section h2 {
+            color: #007bff;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .api-section a {
+            display: block;
+            margin-bottom: 10px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        .api-section a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>Helpdesk Dashboard</h1>
+        </div>
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+        </div>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Total Tickets</h3>
+                <p>{{ total_tickets }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Open Tickets</h3>
+                <p>{{ open_tickets }}</p>
+            </div>
+            <div class="stat-card">
+                <h3>Resolved Tickets</h3>
+                <p>{{ resolved_tickets }}</p>
+            </div>
+        </div>
+        <div class="ticket-grid">
+            {% for ticket in tickets %}
+                <div class="ticket-card">
+                    <h3>{{ ticket.category }}</h3>
+                    <p>{{ ticket.description }}</p>
+                    <p class="time">{{ ticket.created_at | time_since }} ago</p>
+                    <a href="{{ url_for('view_ticket', ticket_id=ticket.id) }}" class="btn">View Ticket</a>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="api-section">
+            <h2>API Documentation</h2>
+            <a href="{{ url_for('api_tickets') }}">List All Tickets</a>
+            <a href="{{ url_for('api_ticket', ticket_id='1') }}">Get Ticket Details</a>
+            <a href="{{ url_for('api_ticket', ticket_id='1', _method='PUT') }}">Update Ticket Status</a>
+        </div>
+    </div>
+</body>
+</html>

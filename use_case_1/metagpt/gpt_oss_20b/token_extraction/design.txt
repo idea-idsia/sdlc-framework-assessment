@@ -1,0 +1,152 @@
+
+## context
+{"Language":"en_us","Programming Language":"Python","Original Requirements":"Create a snake game in Python with a grid-based board, snake initialization, continuous movement, food generation, collision detection, growth, scoring, game over handling, user interface, and animations.","Project Name":"snake_game","Product Goals":["Deliver an engaging and responsive gameplay experience","Ensure intuitive controls and smooth animations","Provide a clear and user-friendly interface"],"User Stories":["As a player, I want to control the snake using arrow keys so that I can navigate the board.","As a player, I want my score to increase automatically when the snake eats food so that I can track my progress.","As a player, I want to see a clear game over message and a restart option so that I can play again immediately."],"Competitive Analysis":["Classic Snake (original console game)","Slither.io (browser multiplayer)","Nibbles (classic arcade)","Snake VS Block (mobile variant)","Snake Game Android (singleâplayer app)","Snake Game iOS (singleâplayer app)","Snake Game Web (HTML5 implementation)"],"Competitive Quadrant Chart":"quadrantChart\n    title \"Reach and engagement of snake games\"\n    x-axis \"Low Reach\" --> \"High Reach\"\n    y-axis \"Low Engagement\" --> \"High Engagement\"\n    quadrant-1 \"We should expand\"\n    quadrant-2 \"Need to promote\"\n    quadrant-3 \"Re-evaluate\"\n    quadrant-4 \"May be improved\"\n    \"Classic Snake\": [0.2, 0.8]\n    \"Slither.io\": [0.9, 0.9]\n    \"Nibbles\": [0.4, 0.6]\n    \"Snake VS Block\": [0.5, 0.5]\n    \"Snake Game Android\": [0.7, 0.7]\n    \"Snake Game iOS\": [0.6, 0.6]\n    \"Snake Game Web\": [0.8, 0.8]","Requirement Analysis":"The core of the game revolves around a 10x10 grid where the snake moves continuously in a chosen direction. Arrow keys change direction, but the snake cannot reverse directly. Food appears randomly, avoiding the snake's body. Collisions with walls or self end the game. Eating food grows the snake and increments the score. The UI must display the grid, snake, food, score, and game over state, with simple ASCII graphics and optional animations for movement and growth.","Requirement Pool":[["P0","Implement a 10x10 grid and initialize the snake at the center moving right."],["P0","Handle continuous movement and arrow key controls, preventing 180Â° turns."],["P0","Generate food at random positions not occupied by the snake."],["P0","Detect collisions with walls, self, and food; trigger growth and score updates."],["P0","Display score, game over message, and provide a restart option."]],"UI Design draft":"The interface will be consoleâbased: a 10x10 grid rendered with characters. The snake will be represented by 'O' for the head and 'o' for the body. Food will be '*'. The score will appear at the top of the screen. Upon game over, a centered message will show the final score and prompt the player to press 'R' to restart.","Anything UNCLEAR":""}
+
+-----
+
+## format example
+[CONTENT]
+{
+    "Implementation approach": "We will ...",
+    "File list": [
+        "main.py",
+        "game.py"
+    ],
+    "Data structures and interfaces": "\nclassDiagram\n    class Main {\n        -SearchEngine search_engine\n        +main() str\n    }\n    class SearchEngine {\n        -Index index\n        -Ranking ranking\n        -Summary summary\n        +search(query: str) str\n    }\n    class Index {\n        -KnowledgeBase knowledge_base\n        +create_index(data: dict)\n        +query_index(query: str) list\n    }\n    class Ranking {\n        +rank_results(results: list) list\n    }\n    class Summary {\n        +summarize_results(results: list) str\n    }\n    class KnowledgeBase {\n        +update(data: dict)\n        +fetch_data(query: str) dict\n    }\n    Main --> SearchEngine\n    SearchEngine --> Index\n    SearchEngine --> Ranking\n    SearchEngine --> Summary\n    Index --> KnowledgeBase\n",
+    "Program call flow": "\nsequenceDiagram\n    participant M as Main\n    participant SE as SearchEngine\n    participant I as Index\n    participant R as Ranking\n    participant S as Summary\n    participant KB as KnowledgeBase\n    M->>SE: search(query)\n    SE->>I: query_index(query)\n    I->>KB: fetch_data(query)\n    KB-->>I: return data\n    I-->>SE: return results\n    SE->>R: rank_results(results)\n    R-->>SE: return ranked_results\n    SE->>S: summarize_results(ranked_results)\n    S-->>SE: return summary\n    SE-->>M: return summary\n",
+    "Anything UNCLEAR": "Clarification needed on third-party API integration, ..."
+}
+[/CONTENT]
+
+## nodes: "<node>: <type>  # <instruction>"
+- Implementation approach: <class 'str'>  # Analyze the difficult points of the requirements, select the appropriate open-source framework
+- File list: typing.List[str]  # Only need relative paths. ALWAYS write a main.py or app.py here
+- Data structures and interfaces: <class 'str'>  # Use mermaid classDiagram code syntax, including classes, method(__init__ etc.) and functions with type annotations, CLEARLY MARK the RELATIONSHIPS between classes, and comply with PEP8 standards. The data structures SHOULD BE VERY DETAILED and the API should be comprehensive with a complete design.
+- Program call flow: <class 'str'>  # Use sequenceDiagram code syntax, COMPLETE and VERY DETAILED, using CLASSES AND API DEFINED ABOVE accurately, covering the CRUD AND INIT of each object, SYNTAX MUST BE CORRECT.
+- Anything UNCLEAR: <class 'str'>  # Mention unclear project aspects, then try to clarify it.
+
+
+## constraint
+Language: Please use the same language as Human INPUT.
+Format: output wrapped inside [CONTENT][/CONTENT] like format example, nothing else.
+
+## action
+Follow instructions of nodes, generate output and make sure it follows the format example.
+
+
+{
+    "Implementation approach": "We will build the game as a small, self‑contained console application using the standard `curses` library for real‑time keyboard input and screen drawing. The core logic will be split into a handful of focused classes:\n\n* **Game** – owns the main loop, coordinates input, update and rendering, and manages the overall state (running, paused, game‑over).\n* **Snake** – stores the ordered list of grid coordinates that make up the snake, handles movement, growth and collision checks.\n* **Food** – keeps the current food position and can generate a new one that never overlaps the snake.\n* **Grid** – represents the 10×10 board, provides bounds checking and a helper to convert coordinates to screen positions.\n* **Renderer** – draws the grid, snake, food and UI elements (score, game‑over message) onto the curses window.\n* **InputHandler** – translates arrow‑key events into direction changes while preventing 180° reversals.\n\nThe game loop will run at a fixed tick rate (e.g. 10 frames per second). Each tick we:\n1. Poll for a key press.\n2. Update the snake’s direction.\n3. Move the snake forward.\n4. Check for collisions (wall, self, food).\n5. Grow the snake and update the score if food is eaten.\n6. Render the updated state.\n\nThis separation keeps the code testable, readable and easily extensible (e.g. adding levels or AI). All state is kept in plain Python data structures (lists, tuples, ints) so no external dependencies are required beyond the standard library.\n\n",
+    "File list": [
+        "main.py",
+        "game.py"
+    ],
+    "Data structures and interfaces": "\nclassDiagram\n    class Game {\n        -grid: Grid\n        -snake: Snake\n        -food: Food\n        -renderer: Renderer\n        -input_handler: InputHandler\n        -score: int\n        -running: bool\n        +__init__(window: curses.window)\n        +start() void\n        +handle_input() void\n        +update() void\n        +render() void\n        +game_over() void\n    }\n    class Snake {\n        -body: List[Tuple[int,int]]\n        -direction: Tuple[int,int]\n        +__init__(start_pos: Tuple[int,int], start_dir: Tuple[int,int])\n        +move() void\n        +grow() void\n        +set_direction(new_dir: Tuple[int,int]) void\n        +collides_with_self() bool\n        +collides_with_wall(grid: Grid) bool\n        +head() Tuple[int,int]\n    }\n    class Food {\n        -position: Tuple[int,int]\n        +__init__(grid: Grid, snake: Snake)\n        +generate_new(grid: Grid, snake: Snake) void\n        +position() Tuple[int,int]\n    }\n    class Grid {\n        -width: int\n        -height: int\n        +__init__(width: int, height: int)\n        +in_bounds(pos: Tuple[int,int]) bool\n        +to_screen_coords(pos: Tuple[int,int]) Tuple[int,int]\n    }\n    class Renderer {\n        -window: curses.window\n        +__init__(window: curses.window)\n        +draw(grid: Grid, snake: Snake, food: Food, score: int, game_over: bool) void\n        +clear() void\n    }\n    class InputHandler {\n        -last_direction: Tuple[int,int]\n        +__init__()\n        +get_direction(key: int) Tuple[int,int]\n    }\n    Game --> Snake\n    Game --> Food\n    Game --> Grid\n    Game --> Renderer\n    Game --> InputHandler\n    Snake --> Grid\n    Food --> Grid\n    Renderer --> Grid\n    Renderer --> Snake\n    Renderer --> Food\n",
+    "Program call flow": "\nsequenceDiagram\n    participant M as main\n    participant G as Game\n    participant I as InputHandler\n    participant S as Snake\n    participant F as Food\n    participant R as Renderer\n    participant Gd as Grid\n\n    M->>G: __init__(curses_window)\n    G->>Gd: __init__(10,10)\n    G->>S: __init__(center, RIGHT)\n    G->>F: __init__(Gd, S)\n    G->>R: __init__(curses_window)\n    G->>I: __init__()\n    G->>G: start()\n\n    loop every tick\n        G->>I: get_direction(key)\n        I->>G: set_direction\n        G->>S: move()\n        G->>S: collides_with_self() -> bool\n        alt collision\n            G->>G: game_over()\n            G->>R: draw(..., game_over=true)\n            G->>G: break loop\n        else\n            G->>F: position()\n            alt ate food\n                G->>S: grow()\n                G->>S: score++\n                G->>F: generate_new(Gd, S)\n            end\n            G->>R: draw(..., game_over=false)\n        end\n    end\n",
+    "Anything UNCLEAR": "The specification mentions \"optional animations for movement and growth\" but does not detail the desired effect. In a console environment, we can simulate a simple animation by briefly flashing the new head position or adding a short delay after growth. If more elaborate animations (e.g., smooth scrolling) are required, a different rendering backend (e.g., Pygame) would be necessary. Clarify whether the simple console animation suffices or if a graphical window is expected."
+}
+
+
+## context
+{"Implementation approach":"We will build the game as a small, selfâcontained console application using the standard `curses` library for realâtime keyboard input and screen drawing. The core logic will be split into a handful of focused classes:\n\n* **Game** â owns the main loop, coordinates input, update and rendering, and manages the overall state (running, paused, gameâover).\n* **Snake** â stores the ordered list of grid coordinates that make up the snake, handles movement, growth and collision checks.\n* **Food** â keeps the current food position and can generate a new one that never overlaps the snake.\n* **Grid** â represents the 10Ã10 board, provides bounds checking and a helper to convert coordinates to screen positions.\n* **Renderer** â draws the grid, snake, food and UI elements (score, gameâover message) onto the curses window.\n* **InputHandler** â translates arrowâkey events into direction changes while preventing 180Â° reversals.\n\nThe game loop will run at a fixed tick rate (e.g. 10 frames per second). Each tick we:\n1. Poll for a key press.\n2. Update the snakeâs direction.\n3. Move the snake forward.\n4. Check for collisions (wall, self, food).\n5. Grow the snake and update the score if food is eaten.\n6. Render the updated state.\n\nThis separation keeps the code testable, readable and easily extensible (e.g. adding levels or AI). All state is kept in plain Python data structures (lists, tuples, ints) so no external dependencies are required beyond the standard library.\n\n","File list":["main.py","game.py"],"Data structures and interfaces":"\nclassDiagram\n    class Game {\n        -grid: Grid\n        -snake: Snake\n        -food: Food\n        -renderer: Renderer\n        -input_handler: InputHandler\n        -score: int\n        -running: bool\n        +__init__(window: curses.window)\n        +start() void\n        +handle_input() void\n        +update() void\n        +render() void\n        +game_over() void\n    }\n    class Snake {\n        -body: List[Tuple[int,int]]\n        -direction: Tuple[int,int]\n        +__init__(start_pos: Tuple[int,int], start_dir: Tuple[int,int])\n        +move() void\n        +grow() void\n        +set_direction(new_dir: Tuple[int,int]) void\n        +collides_with_self() bool\n        +collides_with_wall(grid: Grid) bool\n        +head() Tuple[int,int]\n    }\n    class Food {\n        -position: Tuple[int,int]\n        +__init__(grid: Grid, snake: Snake)\n        +generate_new(grid: Grid, snake: Snake) void\n        +position() Tuple[int,int]\n    }\n    class Grid {\n        -width: int\n        -height: int\n        +__init__(width: int, height: int)\n        +in_bounds(pos: Tuple[int,int]) bool\n        +to_screen_coords(pos: Tuple[int,int]) Tuple[int,int]\n    }\n    class Renderer {\n        -window: curses.window\n        +__init__(window: curses.window)\n        +draw(grid: Grid, snake: Snake, food: Food, score: int, game_over: bool) void\n        +clear() void\n    }\n    class InputHandler {\n        -last_direction: Tuple[int,int]\n        +__init__()\n        +get_direction(key: int) Tuple[int,int]\n    }\n    Game --> Snake\n    Game --> Food\n    Game --> Grid\n    Game --> Renderer\n    Game --> InputHandler\n    Snake --> Grid\n    Food --> Grid\n    Renderer --> Grid\n    Renderer --> Snake\n    Renderer --> Food\n","Program call flow":"\nsequenceDiagram\n    participant M as main\n    participant G as Game\n    participant I as InputHandler\n    participant S as Snake\n    participant F as Food\n    participant R as Renderer\n    participant Gd as Grid\n\n    M->>G: __init__(curses_window)\n    G->>Gd: __init__(10,10)\n    G->>S: __init__(center, RIGHT)\n    G->>F: __init__(Gd, S)\n    G->>R: __init__(curses_window)\n    G->>I: __init__()\n    G->>G: start()\n\n    loop every tick\n        G->>I: get_direction(key)\n        I->>G: set_direction\n        G->>S: move()\n        G->>S: collides_with_self() -> bool\n        alt collision\n            G->>G: game_over()\n            G->>R: draw(..., game_over=true)\n            G->>G: break loop\n        else\n            G->>F: position()\n            alt ate food\n                G->>S: grow()\n                G->>S: score++\n                G->>F: generate_new(Gd, S)\n            end\n            G->>R: draw(..., game_over=false)\n        end\n    end\n","Anything UNCLEAR":"The specification mentions \"optional animations for movement and growth\" but does not detail the desired effect. In a console environment, we can simulate a simple animation by briefly flashing the new head position or adding a short delay after growth. If more elaborate animations (e.g., smooth scrolling) are required, a different rendering backend (e.g., Pygame) would be necessary. Clarify whether the simple console animation suffices or if a graphical window is expected."}
+
+-----
+
+## format example
+[CONTENT]
+{
+    "Required Python packages": [
+        "flask==1.1.2",
+        "bcrypt==3.2.0"
+    ],
+    "Required Other language third-party packages": [
+        "No third-party dependencies required"
+    ],
+    "Logic Analysis": [
+        [
+            "game.py",
+            "Contains Game class and ... functions"
+        ],
+        [
+            "main.py",
+            "Contains main function, from game import Game"
+        ]
+    ],
+    "Task list": [
+        "game.py",
+        "main.py"
+    ],
+    "Full API spec": "openapi: 3.0.0 ...",
+    "Shared Knowledge": "`game.py` contains functions shared across the project.",
+    "Anything UNCLEAR": "Clarification needed on how to start and initialize third-party libraries."
+}
+[/CONTENT]
+
+## nodes: "<node>: <type>  # <instruction>"
+- Required Python packages: typing.List[str]  # Provide required Python packages in requirements.txt format.
+- Required Other language third-party packages: typing.List[str]  # List down the required packages for languages other than Python.
+- Logic Analysis: typing.List[typing.List[str]]  # Provide a list of files with the classes/methods/functions to be implemented, including dependency analysis and imports.
+- Task list: typing.List[str]  # Break down the tasks into a list of filenames, prioritized by dependency order.
+- Full API spec: <class 'str'>  # Describe all APIs using OpenAPI 3.0 spec that may be used by both frontend and backend. If front-end and back-end communication is not required, leave it blank.
+- Shared Knowledge: <class 'str'>  # Detail any shared knowledge, like common utility functions or configuration variables.
+- Anything UNCLEAR: <class 'str'>  # Mention any unclear aspects in the project management context and try to clarify them.
+
+
+## constraint
+Language: Please use the same language as Human INPUT.
+Format: output wrapped inside [CONTENT][/CONTENT] like format example, nothing else.
+
+## action
+Follow instructions of nodes, generate output and make sure it follows the format example.
+
+
+{
+    "Required Python packages": [
+        "No external packages required; uses only the standard library (curses, typing, etc.)"
+    ],
+    "Required Other language third-party packages": [
+        "No third‑party dependencies required"
+    ],
+    "Logic Analysis": [
+        [
+            "main.py",
+            "Imports Game from game.py, initializes curses, creates Game instance, calls start()"
+        ],
+        [
+            "game.py",
+            "Defines Game class: manages main loop, holds Grid, Snake, Food, Renderer, InputHandler, score, running flag; imports all component classes"
+        ],
+        [
+            "snake.py",
+            "Defines Snake class: body list, direction tuple, move(), grow(), set_direction(), collides_with_self(), collides_with_wall(), head()"
+        ],
+        [
+            "food.py",
+            "Defines Food class: position tuple, generate_new() that picks a random free cell, position() accessor"
+        ],
+        [
+            "grid.py",
+            "Defines Grid class: width, height, in_bounds(), to_screen_coords()"
+        ],
+        [
+            "renderer.py",
+            "Defines Renderer class: draws grid, snake, food, score, game‑over message; uses curses window"
+        ],
+        [
+            "input_handler.py",
+            "Defines InputHandler class: get_direction() translates key codes to direction tuples, prevents 180° reversal"
+        ]
+    ],
+    "Task list": [
+        "main.py",
+        "game.py",
+        "snake.py",
+        "food.py",
+        "grid.py",
+        "renderer.py",
+        "input_handler.py"
+    ],
+    "Full API spec": "",
+    "Shared Knowledge": "All state is stored in plain Python data structures (lists, tuples, ints). The game is a console application using the curses library; no external GUI frameworks are required. Each component is isolated to aid testing and future extension (e.g., adding levels or AI).",
+    "Anything UNCLEAR": "The specification mentions optional animations for movement and growth but does not detail the desired effect. In a console environment, a simple flash or brief delay can simulate animation. If a richer graphical animation is required, a different rendering backend (e.g., Pygame) would be necessary. Clarify whether the simple console animation suffices or a graphical window is expected."
+}
+

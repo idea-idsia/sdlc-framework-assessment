@@ -1,0 +1,17 @@
+sequenceDiagram
+    participant M as Main
+    participant SE as SearchEngine
+    participant I as Index
+    participant R as Ranking
+    participant S as Summary
+    participant KB as KnowledgeBase
+    M->>SE: search(query)
+    SE->>I: query_index(query)
+    I->>KB: fetch_data(query)
+    KB-->>I: return data
+    I-->>SE: return results
+    SE->>R: rank_results(results)
+    R-->>SE: return ranked_results
+    SE->>S: summarize_results(ranked_results)
+    S-->>SE: return summary
+    SE-->>M: return summary

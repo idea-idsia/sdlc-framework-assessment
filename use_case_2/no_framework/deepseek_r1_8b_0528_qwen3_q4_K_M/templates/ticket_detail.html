@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ticket Detail</title>
+</head>
+<body>
+    <h1>Ticket #{{ ticket.id }}</h1>
+    <p><strong>Title:</strong> {{ ticket.title }}</p>
+    <p><strong>Description:</strong> {{ ticket.description }}</p>
+    <p><strong>Status:</strong> {{ ticket.status }}</p>
+    <p><strong>Category:</strong> {{ ticket.category }}</p>
+    <p><strong>Created:</strong> {{ ticket.created_at }}</p>
+    <p><strong>Last Modified:</strong> {{ ticket.last_modified_at }}</p>
+    {% if ticket.closed_at %}
+        <p><strong>Closed:</strong> {{ ticket.closed_at }}</p>
+    {% endif %}
+
+    <h2>Messages</h2>
+    {% for message in messages %}
+        <div class="message">
+            <strong>From {{ message.sender }}:</strong>
+            <p>{{ message.message }}</p>
+            <p>{{ message.timestamp }}</p>
+        </div>
+    {% end %}
+    {% if role == 'helpdesk' %}
+        <form method="POST" action="{{ url_for('add_message', ticket_id=ticket.id) }}">
+            <label for="message">Message:</label>
+            <textarea id="message" name="message" required></textarea>
+            <br>
+            <input type="submit" value="Send">
+        </form>
+    {% else %}
+        <form method="POST" action="{{ url_for('add_message', ticket_id=ticket.id) }}">
+            <label for="message">Message:</label>
+            <textarea id="message" name="message" required></textarea>
+            <br>
+            <input type="submit" value="Send">
+        </form>
+    {% endif %}
+</body>
+</html>

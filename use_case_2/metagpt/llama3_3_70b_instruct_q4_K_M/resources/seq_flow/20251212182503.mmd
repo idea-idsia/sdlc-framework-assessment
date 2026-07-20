@@ -1,0 +1,18 @@
+
+sequenceDiagram
+    participant U as User
+    participant HDS as HelpDeskStaff
+    participant TMS as TicketManagementSystem
+    participant T as Ticket
+    participant DV as DataVisualizer
+    U->>TMS: report_issue(issue)
+    TMS->>T: create_ticket(issue)
+    T-->>TMS: return ticket
+    TMS->>HDS: assign_ticket(ticket_id)
+    HDS->>TMS: update_ticket_status(ticket_id, status)
+    TMS->>T: update_status(status)
+    T-->>TMS: return updated_ticket
+    HDS->>TMS: view_tickets()
+    TMS->>DV: visualize_ticket_data()
+    DV-->>TMS: return visualization
+    TMS-->>HDS: return tickets and visualization

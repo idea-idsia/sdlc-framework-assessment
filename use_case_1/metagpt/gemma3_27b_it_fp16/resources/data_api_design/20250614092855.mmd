@@ -1,0 +1,42 @@
+
+classDiagram
+    class Main {
+        -game_board: GameBoard
+        -snake: Snake
+        -food: Food
+        -running: bool
+        +__init__()
+        +run()
+    }
+    class GameBoard {
+        -width: int
+        -height: int
+        -block_size: int
+        -color: tuple
+        +__init__(width: int, height: int, block_size: int, color: tuple)
+        +draw(screen)
+    }
+    class Snake {
+        -body: list[tuple]
+        -direction: tuple
+        -color: tuple
+        +__init__(start_position: tuple, color: tuple)
+        +move()
+        +grow()
+        +check_collision(width: int, height: int)
+        +draw(screen)
+        +get_head_position() tuple
+    }
+    class Food {
+        -position: tuple
+        -color: tuple
+        +__init__(width: int, height: int, color: tuple)
+        +generate(width: int, height: int)
+        +draw(screen)
+        +get_position() tuple
+    }
+    Main --> GameBoard : uses
+    Main --> Snake : uses
+    Main --> Food : uses
+    GameBoard -- Snake : contains
+    GameBoard -- Food : contains

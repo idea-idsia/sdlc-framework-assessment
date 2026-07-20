@@ -1,0 +1,38 @@
+
+classDiagram
+    class User {
+        -id: int
+        -username: str
+        -password_hash: str
+        +__init__(username: str, password_hash: str)
+        +login() bool
+        +report_ticket(title: str, description: str) Ticket
+        +modify_ticket(ticket_id: int, status: str) bool
+    }
+    class Ticket {
+        -id: int
+        -user_id: int
+        -title: str
+        -description: str
+        -status: str
+        +__init__(title: str, description: str)
+        +update_status(status: str) bool
+    }
+    class Message {
+        -id: int
+        -ticket_id: int
+        -user_id: int
+        -content: str
+        -timestamp: datetime
+        +__init__(content: str)
+        +send_message(ticket_id: int, content: str) bool
+    }
+    class Database {
+        -engine: Engine
+        -SessionLocal: SessionMaker
+        +create_tables()
+        +get_db() Generator[Session]
+    }
+    User --> Ticket : has_many
+    Message --> Ticket : belongs_to
+    Database --> User, Ticket, Message : contains

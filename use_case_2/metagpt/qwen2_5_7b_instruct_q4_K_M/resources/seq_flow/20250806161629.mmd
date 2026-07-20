@@ -1,0 +1,23 @@
+
+sequenceDiagram
+    participant M as Main
+    participant U as User
+    participant T as Ticket
+    participant H as HelpdeskStaff
+    participant DB as DatabaseAPI
+    participant MS as MicroservicesAPI
+    M->>U: login(username, password_hash)
+    U->>DB: create_user(username, password_hash)
+    DB-->>U: return user_id
+    M->>U: report_issue(issue)
+    U->>MS: report_issue(username, issue)
+    MS-->>T: create_ticket(user_id, issue)
+    T-->>U: return ticket_id
+    M->>U: view_tickets(status)
+    U->>MS: view_tickets(status)
+    MS-->>U: return tickets
+    M->>H: change_ticket_status(ticket_id, new_status)
+    H->>MS: change_ticket_status(ticket_id, new_status)
+    MS-->>DB: update_ticket(ticket_id, status)
+    DB-->>MS: return success
+    MS-->>H: return success

@@ -1,0 +1,146 @@
+from flask import Flask, request, jsonify
+from models import Ticket, User, HelpDeskStaff, TicketManager, db
+
+app = Flask(__name__)
+
+# Validate input for report_issue function
+def validate_report_issue_input(title, description, user_id):
+    if not title or not description or not user_id:
+        return False
+    return True
+
+# Report a new issue
+@app.route('/report_issue', methods=['POST'])
+def report_issue():
+    data = request.get_json()
+    title = data.get('title')
+    description = data.get('description')
+    user_id = data.get('user_id')
+
+    if not validate_report_issue_input(title, description, user_id):
+        return jsonify({'error': 'Invalid input'}), 400
+
+    # Validate user
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    try:
+        # Create a new ticket using TicketManager
+        ticket_manager = TicketManager(db.session)
+        ticket = Ticket(title=title, description=description, status="open")
+        db.session.add(ticket)
+        db.session.commit()
+
+        # Assign the ticket to the user (assuming relationship is defined in models)
+        user.tickets.append(ticket)
+        db.session.commit()
+
+        return jsonify({'message': 'Issue reported successfully'}), 201
+    except Exception as e:
+        db.session.rollback()  # Roll back the session in case of an error
+        return jsonify({'error': str(e)}), 500
+
+
+# View all tickets
+@app.route('/view_tickets', methods=['GET'])
+def view_tickets():
+    try:
+        # Retrieve all tickets using TicketManager
+        ticket_manager = TicketManager(db.session)
+        tickets = ticket_manager.db_session.query(Ticket).all()
+
+        # Serialize the tickets
+        serialized_tickets = []
+        for ticket in tickets:
+            serialized_ticket = {
+                'id': ticket.id,
+                'title': ticket.title,
+                'description': ticket.description,
+                'status': ticket.status
+            }
+            serialized_tickets.append(serialized_ticket)
+
+        return jsonify({'tickets': serialized_tickets}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Exchange messages for a ticket
+@app.route('/exchange_messages', methods=['POST'])
+def exchange_messages():
+    data = request.get_json()
+    ticket_id = data.get('ticket_id')
+    message = data.get('message')
+
+    # Validate input
+    if not ticket_id or not message:
+        return jsonify({'error': 'Invalid input'}), 400
+
+    # Validate ticket
+    ticket = Ticket.query.get(ticket_id)
+    if not ticket:
+        return jsonify({'error': 'Ticket not found'}), 404
+
+    try:
+        # Exchange messages using TicketManager
+        ticket_manager = TicketManager(db.session)
+        ticket_manager.exchange_messages(ticket_id, message)
+
+        return jsonify({'message': 'Messages exchanged successfully'}), 200
+    except Exception as e:
+        db.session.rollback()  # Roll back the session in case of an error
+        return jsonify({'error': str(e)}), 500
+
+
+# Update the status of a ticket
+@app.route('/update_status', methods=['POST'])
+def update_status():
+    data = request.get_json()
+    ticket_id = data.get('ticket_id')
+    status = data.get('status')
+
+    # Validate input
+    if not ticket_id or not status:
+        return jsonify({'error': 'Invalid input'}), 400
+
+    # Validate ticket
+    ticket = Ticket.query.get(ticket_id)
+    if not ticket:
+        return jsonify({'error': 'Ticket not found'}), 404
+
+    try:
+        # Update status using TicketManager
+        ticket_manager = TicketManager(db.session)
+        ticket_manager.assign_status(ticket_id, status)
+
+        return jsonify({'message': 'Status updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()  # Roll back the session in case of an error
+        return jsonify({'error': str(e)}), 500
+
+
+# Analyze data related to tickets
+@app.route('/analyze_data', methods=['GET'])
+def analyze_data():
+    try:
+        # Retrieve all tickets using TicketManager
+        ticket_manager = TicketManager(db.session)
+        tickets = ticket_manager.db_session.query(Ticket).all()
+
+        # Example analysis: counting tickets by status
+        status_counts = {}
+        for ticket in tickets:
+            if ticket.status not in status_counts:
+                status_counts[ticket.status] = 1
+            else:
+                status_counts[ticket.status] += 1
+
+        return jsonify({'analysis': status_counts}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+

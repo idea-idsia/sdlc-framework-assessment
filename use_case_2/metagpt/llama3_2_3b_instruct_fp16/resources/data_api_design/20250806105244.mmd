@@ -1,0 +1,52 @@
+
+class Ticket:
+    def __init__(self, id, title, description, status):
+        self.id = id
+        self.title = title
+        self.description = description
+        self.status = status
+
+class User:
+    def __init__(self, id, name, email):
+        self.id = id
+        self.name = name
+        self.email = email
+
+class HelpdeskStaff(User):
+    def __init__(self, id, name, email, tickets=None):
+        super().__init__(id, name, email)
+        self.tickets = tickets if tickets else []
+
+class TicketManager:
+    def __init__(self):
+        self.tickets = []
+        self.users = []
+
+    def create_ticket(self, title, description, status):
+        ticket = Ticket(len(self.tickets) + 1, title, description, status)
+        self.tickets.append(ticket)
+
+    def get_tickets(self):
+        return self.tickets
+
+    def update_ticket_status(self, id, status):
+        for ticket in self.tickets:
+            if ticket.id == id:
+                ticket.status = status
+                break
+
+    def assign_ticket_to_staff(self, id, staff_id):
+        for ticket in self.tickets:
+            if ticket.id == id:
+                for staff in self.users:
+                    if staff.id == staff_id:
+                        staff.tickets.append(ticket)
+                        break
+                break
+
+    def get_user_tickets(self, user_id):
+        for user in self.users:
+            if user.id == user_id:
+                return [ticket for ticket in user.tickets]
+        return []
+    

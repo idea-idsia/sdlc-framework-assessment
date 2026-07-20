@@ -1,0 +1,260 @@
+
+[You are a client. You employ AgileCoder, a software development company, to develop a product based on the following task description: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+You also require AgileCoder to obey the following requirements:
+1. The proposed features can be implementable,
+2. The product successfully runs without any errors,
+3. The product is be designed for ease of use,
+4. The product has a full of manual and relevant documentation.
+To achieve your goal, you must write a response based on your needs.]
+
+Python*
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Product Owner. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+AgileCoder is using Agile Scrum for software development.
+You are responsible for maximizing the value delivered by the team by ensuring that the team backlog is aligned with customer and stakeholder needs.
+Here is a new customer's task: Create a ticket management web application that allows users to report issues at a university campus (facility management problems, technical IT issues and services complaints). The application allows users to report and modify problems, and interacts with helpdesk staff who is taking care of the issue.
+
+The application uses a database to store all the data and enables the helpdesk staff to visualize the data and select the analysis to perform.
+
+Use python programming language.
+# Requirements:
+
+## Login page:
+    - Generate a GUI that allows users to enter the application either as an helpdesk staff or a simple user.
+    - Do not implement any login and user management system.
+
+## Ticket management system:
+    - Generate a GUI that enables following ticket management:
+        - Simple user can insert a new ticket and view and modify all the 'open' and 'active' tickets.
+        - Helpdesk users can view all the open, active and closed tickets. They can change ticket status from 'open' to 'active' and from 'active' to 'closed'.
+        - Under each ticket, helpdesk users and simple users can exchange messages related to that ticket.
+    - Ticket attributes:
+        - Each ticket has a status assigned:
+            - A newly created ticket has the status 'open' assigned by default.
+            - Helpdesk users can change tickets status from 'open' to 'active' and from 'active' to 'closed'.
+        - Each ticket has a free text description field.
+        - Each ticket has an automatically assigned category among the following categories: facility management (e.g.: elevator is not working), technical IT (e.g.: WIFI malfunctioning), services complaints (e.g.: canteen's food complaints)
+        - Each ticket has an opening, last modification and closing date attribute.
+    - Database:
+        - Implement a database to store tickets and users interaction data.
+        - Implement all the basic functionalities that a database needs as inserting and modifying data.
+
+## Micro-services architecture:
+    - Implement a microservices architecture that interacts with the ticket management application to provide helpdesk users data visualization and analysis functionalities.
+    - Interaction with the database should be enabled via API.
+    - Implement the following services:
+        - Service 1: Allow user to choose the period (last X hours/days). Display the number of tickets opened in the selected period, which have not yet been closed.
+        - Service 2: Average ticket resolution time, displayed by the opening month (of the ticket)
+        - Service 3: Cluster the tickets by ticket category and display number of active tickets per category..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+Below is an example of how you could implement this using Flask, SQLite database.
+
+**app.py**
+
+```python
+from flask import Flask, render_template, request, jsonify
+import sqlite3
+from models import create_table, insert_ticket, insert_message, get_all_tickets, get_ticket, update_ticket, delete_ticket
+import datetime
+
+app = Flask(__name__)
+
+# Connect to SQLite database
+conn = sqlite3.connect('tickets.db')
+db = conn.cursor()
+
+def init_db():
+    create_table(db)
+
+init_db()
+
+
+@app.route('/create-ticket', methods=['GET'])
+def create_ticket():
+    return render_template('create-ticket.html')
+
+@app.route('/api/tickets', methods=['POST'])
+def create_new_ticket():
+    title = request.json.get('title')
+    description = request.json.get('description')
+    status = 'Open'
+    category_id = 1
+
+    if 'status' in request.json:
+        status = request.json['status']
+
+    insert_ticket(conn, title, description, status, category_id)
+
+    return jsonify({'message': 'Ticket created successfully'}), 201
+
+@app.route('/api/tickets', methods=['GET'])
+def get_all_tickets():
+    tickets = get_all_tickets(db)
+
+    output = []
+
+    for ticket in tickets:
+        ticket_info = {
+            'id': ticket.id,
+            'title': ticket.title,
+            'description': ticket.description,
+            'status': ticket.status,
+            'opened_at': ticket.opened_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.opened_at else None,
+            'modified_at': ticket.modified_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.modified_at else None
+        }
+
+        output.append(ticket_info)
+
+    return jsonify(output)
+
+@app.route('/api/tickets/<int:id>', methods=['GET'])
+def get_ticket(id):
+    ticket = get_ticket(db, id)
+
+    if not ticket:
+        return jsonify({'message': 'Ticket not found'}), 404
+
+    return jsonify({
+        'id': ticket.id,
+        'title': ticket.title,
+        'description': ticket.description,
+        'status': ticket.status,
+        'opened_at': ticket.opened_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.opened_at else None,
+        'modified_at': ticket.modified_at.strftime('%Y-%m-%d %H:%M:%S') if ticket.modified_at else None
+    })
+
+@app.route('/api/tickets/<int:id>', methods=['PUT'])
+def update_ticket(id):
+    title = request.json.get('title')
+    description = request.json.get('description')
+    status = 'Open'
+
+    if 'status' in request.json:
+        status = request.json['status']
+
+    update_ticket(conn, id, title or ticket.title, description or ticket.description, status)
+
+    return jsonify({'message': 'Ticket updated successfully'})
+
+@app.route('/api/tickets/<int:id>', methods=['DELETE'])
+def delete_ticket(id):
+    delete_ticket(conn, id)
+
+    return jsonify({'message': 'Ticket deleted successfully'})
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+**templates**
+
+Create a new folder called `templates` in the same directory as your Python script. Inside this folder, create three HTML files:
+
+1.  `create_ticket.html`
+2.  `view_messages.html`
+3.  `average_resolution_time.html`
+
+Here's an example implementation for each of these templates:
+
+**create_ticket.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Creation</title>
+</head>
+<body>
+    <form action="/api/tickets" method="post">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title"><br><br>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description"></textarea><br><br>
+        <label for="status">Status:</label>
+        <select id="status" name="status">
+            <option value="Open">Open</option>
+            <option value="Closed">Closed</option>
+        </select><br><br>
+        <input type="submit" value="Create Ticket">
+    </form>
+</body>
+</html>
+```
+
+**view_messages.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Messages</title>
+</head>
+<body>
+<div id="messages"></div>
+
+<form action="/api/messages/{{ ticket_id }}" method="post">
+    <label for="message">Message:</label>
+    <textarea id="message" name="message"></textarea><br><br>
+    <input type="submit" value="Send Message">
+</form>
+</body>
+</html>
+```
+
+**average_resolution_time.html**
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Average Resolution Time</title>
+</head>
+<body>
+<div id="average-resolution-time"></div>
+</body>
+</html>
+```
+
+This code snippet provides a basic implementation for the ticket management system, user interaction, and data visualization using Flask and SQLite database. The templates can be easily modified to suit your specific requirements.
+
+**Note:** You may need to modify the routes and templates according to your actual API endpoint and HTML structure.

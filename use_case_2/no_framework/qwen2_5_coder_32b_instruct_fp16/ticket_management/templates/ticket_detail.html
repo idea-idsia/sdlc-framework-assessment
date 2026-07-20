@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Helpdesk Tickets</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Helpdesk Tickets</h1>
+
+    <ul>
+        {% for ticket in tickets %}
+        <li>{{ ticket.description }} - {{ ticket.category }} - {{ ticket.status }}
+            <form method="post" style="display:inline;">
+                <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+                <select name="new_status">
+                    <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Open</option>
+                    <option value="active" {% if ticket.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Closed</option>
+                </select>
+                <button type="submit">Update Status</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>

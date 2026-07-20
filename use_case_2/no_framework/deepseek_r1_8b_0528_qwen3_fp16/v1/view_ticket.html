@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Ticket</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        .ticket-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .ticket-header h1 {
+            color: #007bff;
+        }
+        .ticket-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .ticket-info {
+            flex: 1;
+            min-width: 300px;
+        }
+        .ticket-actions {
+            flex: 1;
+            min-width: 300px;
+        }
+        .ticket-info p {
+            margin-bottom: 10px;
+        }
+        .ticket-actions form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .flash-messages {
+            color: red;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="ticket-header">
+            <h1>{{ ticket.category }}</h1>
+        </div>
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul>
+                        {% for message in messages %}
+                            <li>{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+        </div>
+        <div class="ticket-details">
+            <div class="ticket-info">
+                <p><strong>ID:</strong> {{ ticket.id }}</p>
+                <p><strong>Created At:</strong> {{ ticket.created_at }}</p>
+                <p><strong>Updated At:</strong> {{ ticket.updated_at }}</p>
+                <p><strong>Status:</strong> {{ ticket.status }}</p>
+                <p><strong>Description:</strong> {{ ticket.description }}</p>
+            </div>
+            <div class="ticket-actions">
+                <h2>Actions</h2>
+                <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket.id) }}">
+                    <select name="status">
+                        <option value="Open" {% if ticket.status == 'Open' %}selected{% endif %}>Open</option>
+                        <option value="In Progress" {% if ticket.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                        <option value="Resolved" {% if ticket.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                    </select>
+                    <button type="submit" class="btn btn-success">Update Status</button>
+                </form>
+                <a href="{{ url_for('download_ticket', ticket_id=ticket.id) }}" class="btn">Download Ticket</a>
+                <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

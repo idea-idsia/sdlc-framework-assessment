@@ -1,0 +1,43 @@
+
+classDiagram
+    class Main {
+        -TicketService ticket_service
+        -AnalyticsService analytics_service
+        +main() str
+    }
+    class TicketService {
+        -Database database
+        +create_ticket(ticket_data: dict) int
+        +get_ticket(ticket_id: int) dict
+        +update_ticket(ticket_id: int, ticket_data: dict) bool
+        +get_all_tickets(status: str) list
+        +change_ticket_status(ticket_id: int, status: str) bool
+        +add_message(ticket_id: int, message: str) bool
+    }
+    class AnalyticsService {
+        -Database database
+        +get_ticket_counts_by_period(period: str) int
+        +get_average_resolution_time_by_month() dict
+        +get_ticket_counts_by_category() dict
+    }
+    class Database {
+        -connection
+        +connect()
+        +execute_query(query: str) list
+        +insert_data(table: str, data: dict) int
+        +update_data(table: str, condition: str, data: dict) bool
+    }
+    class Ticket {
+        -ticket_id: int
+        -description: str
+        -status: str
+        -category: str
+        -opening_date: datetime
+        -last_modification_date: datetime
+        -closing_date: datetime
+    }
+    Main --> TicketService
+    Main --> AnalyticsService
+    TicketService --> Database
+    AnalyticsService --> Database
+    TicketService --* Ticket

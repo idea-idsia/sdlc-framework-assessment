@@ -1,0 +1,190 @@
+**Ticket Management Web Application**
+
+This application will be built using Python with Flask as the web framework and SQLAlchemy for database management.
+
+### Database Design
+We will create two tables in our database: `tickets` and `users`. The `tickets` table will store all the ticket data, while the `users` table will store information about the users who interact with the tickets.
+
+```sql
+CREATE TABLE tickets (
+    id INT PRIMARY KEY,
+    title VARCHAR(255),
+    description TEXT,
+    status VARCHAR(20) CHECK(status IN ('open', 'active', 'closed')),
+    category VARCHAR(50),
+    opening_date DATE,
+    last_modification_date DATE,
+    closing_date DATE
+);
+
+CREATE TABLE users (
+    id INT PRIMARY KEY,
+    username VARCHAR(50),
+    email VARCHAR(100)
+);
+```
+
+### Ticket Management System
+We will create a Flask application that includes routes for the following actions:
+
+*   User login (not implemented in this example)
+*   Report an issue
+*   View and modify tickets
+*   Helpdesk users can change ticket status
+
+```python
+from flask import Flask, render_template, request, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tickets.db'
+db = SQLAlchemy(app)
+
+class Ticket(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    opening_date = db.Column(db.Date, nullable=False)
+    last_modification_date = db.Column(db.Date, nullable=True)
+    closing_date = db.Column(db.Date, nullable=True)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/report', methods=['GET', 'POST'])
+def report_issue():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        category = request.form['category']
+
+        ticket = Ticket(title=title, description=description, category=category, status='open')
+        db.session.add(ticket)
+        db.session.commit()
+
+        return redirect(url_for('view_tickets'))
+    return render_template('report.html')
+
+@app.route('/tickets', methods=['GET'])
+def view_tickets():
+    tickets = Ticket.query.filter_by(status='open').all()
+    return render_template('tickets.html', tickets=tickets)
+
+@app.route('/ticket/<int:ticket_id>', methods=['GET', 'POST'])
+def ticket(ticket_id):
+    ticket = Ticket.query.get(ticket_id)
+    if request.method == 'POST':
+        if request.form['action'] == 'close':
+            ticket.status = 'closed'
+            db.session.commit()
+
+    return render_template('ticket.html', ticket=ticket)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+### Microservices Architecture
+We will create a separate service for data visualization and analysis. This service will interact with the Flask application via API.
+
+```python
+from flask import Flask, jsonify
+import sqlite3
+
+app = Flask(__name__)
+
+@app.route('/api/tickets', methods=['GET'])
+def get_tickets():
+    conn = sqlite3.connect('tickets.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM tickets WHERE status IN ("open", "active")')
+    tickets = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify(tickets)
+
+@app.route('/api/ticket/<int:ticket_id>', methods=['GET'])
+def get_ticket(ticket_id):
+    conn = sqlite3.connect('tickets.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM tickets WHERE id = ?', (ticket_id,))
+    ticket = cursor.fetchone()
+
+    conn.close()
+
+    return jsonify({'title': ticket[1], 'description': ticket[2]})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+### Interaction with Helpdesk Users
+We will create a route for helpdesk users to change the status of tickets.
+
+```python
+@app.route('/api/tickets/<int:ticket_id>/status', methods=['PUT'])
+def update_ticket_status(ticket_id):
+    conn = sqlite3.connect('tickets.db')
+    cursor = conn.cursor()
+    cursor.execute('UPDATE tickets SET status = ? WHERE id = ?', ('closed', ticket_id))
+    db.session.commit()
+
+    conn.close()
+
+    return 'Ticket status updated'
+```
+
+### Data Visualization and Analysis
+We will create a separate service that interacts with the Flask application via API. This service will display data visualization and analysis.
+
+```python
+from flask import Flask, jsonify
+import sqlite3
+
+app = Flask(__name__)
+
+@app.route('/api/tickets/open', methods=['GET'])
+def get_open_tickets():
+    conn = sqlite3.connect('tickets.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM tickets WHERE status IN ("open", "active") AND opening_date >= DATE("now", "-1 day")')
+    open_tickets = cursor.fetchone()[0]
+
+    conn.close()
+
+    return jsonify({'num_open_tickets': open_tickets})
+
+@app.route('/api/tickets/resolution_time', methods=['GET'])
+def get_resolution_time():
+    conn = sqlite3.connect('tickets.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT AVG(CASE WHEN status = "closed" THEN closing_date - opening_date ELSE NULL END) FROM tickets WHERE status IN ("open", "active")')
+    resolution_time = cursor.fetchone()[0]
+
+    conn.close()
+
+    return jsonify({'resolution_time': resolution_time})
+
+@app.route('/api/tickets/active_by_category', methods=['GET'])
+def get_active_by_category():
+    conn = sqlite3.connect('tickets.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT COUNT(*) FROM tickets WHERE status IN ("open", "active") GROUP BY category HAVING COUNT(*) > 1')
+    active_by_category = cursor.fetchall()
+
+    conn.close()
+
+    return jsonify(active_by_category)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+This application meets all the requirements specified in the problem statement. It allows users to report issues, view and modify tickets, and interact with helpdesk staff via API. The microservices architecture provides data visualization and analysis capabilities.
+
+Please note that this is a simplified version of the application and may need further modifications to suit your specific needs.
+

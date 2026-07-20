@@ -1,0 +1,26 @@
+
+sequenceDiagram
+    participant M as Main
+    participant GB as GameBoard
+    participant S as Snake
+    participant F as Food
+    M->>GB: __init__(width, height, block_size, color)
+    M->>S: __init__(start_position, color)
+    M->>F: __init__(width, height, color)
+    loop Game Loop
+        M->>S: move()
+        S->>S: check_collision(width, height)
+        alt Collision Detected
+            M->>M: Game Over
+            break
+        end
+        S->>S: get_head_position()
+        S->>F: get_position()
+        alt Snake eats Food
+            S->>S: grow()
+            F->>F: generate(width, height)
+        end
+        M->>GB: draw(screen)
+        S->>GB: draw(screen)
+        F->>GB: draw(screen)
+    end

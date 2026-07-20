@@ -1,0 +1,26 @@
+
+sequenceDiagram
+    participant M as Main
+    participant U as User
+    participant T as Ticket
+    participant M as Message
+    participant DB as Database
+    M->>U: login(username, password)
+    U-->>M: user_obj
+    M->>DB: get_db()
+    DB-->>M: db_session
+    M->>U: report_ticket(title, description)
+    U-->>T: ticket_id
+    T-->>DB: create_ticket(ticket_id)
+    DB-->>T: success_flag
+    T-->>M: success_flag
+    M->>U: modify_ticket(ticket_id, status)
+    U-->>T: updated_flag
+    T-->>DB: update_status(updated_flag)
+    DB-->>T: success_flag
+    T-->>M: success_flag
+    M->>M: send_message(ticket_id, content)
+    M-->>U: message_id
+    U-->>M: message_obj
+    M-->>DB: create_message(message_id)
+    DB-->>M: success_flag

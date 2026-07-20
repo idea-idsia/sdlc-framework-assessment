@@ -1,0 +1,34 @@
+
+classDiagram
+    class GameBoard {
+        -width: int
+        -height: int
+        +__init__(self, width: int, height: int)
+        +display(self) str
+        +update_grid(self, grid: list[list[str]])
+    }
+    class Snake {
+        -position: tuple[int, int]
+        -direction: str
+        -length: int
+        +__init__(self, position: tuple[int, int], direction: str)
+        +move(self) -> None
+        +grow(self) -> None
+    }
+    class Food {
+        -position: tuple[int, int]
+        +__init__(self, game_board: GameBoard)
+        +generate_food(game_board: GameBoard) -> None
+    }
+    class CollisionHandler {
+        +check_collision(snake: Snake, food: Food, board: GameBoard) -> bool
+    }
+    class ScoreDisplay {
+        -score: int
+        +__init__(self)
+        +display_score(self) str
+    }
+    GameBoard --> Snake
+    GameBoard --> Food
+    GameBoard --> CollisionHandler
+    GameBoard --> ScoreDisplay

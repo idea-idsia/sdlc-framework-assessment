@@ -1,0 +1,43 @@
+
+classDiagram
+    class User {
+        -id: int
+        -username: str
+        -email: str
+        +__init__(username: str, email: str)
+        +report_issue(issue: str) None
+    }
+    class Ticket {
+        -id: int
+        -title: str
+        -description: str
+        -status: str
+        +__init__(title: str, description: str)
+        +update_status(status: str) None
+    }
+    class HelpDeskStaff {
+        -id: int
+        -username: str
+        -email: str
+        +__init__(username: str, email: str)
+        +assign_ticket(ticket_id: int) None
+        +update_ticket_status(ticket_id: int, status: str) None
+    }
+    class TicketManagementSystem {
+        -tickets: list[Ticket]
+        -users: list[User]
+        -helpdesk_staff: list[HelpDeskStaff]
+        +__init__() None
+        +report_issue(user: User, issue: str) Ticket
+        +view_tickets() list[Ticket]
+        +assign_ticket(helpdesk_staff: HelpDeskStaff, ticket_id: int) None
+    }
+    class DataVisualizer {
+        -ticket_data: dict
+        +__init__() None
+        +visualize_ticket_data() str
+    }
+    User --> TicketManagementSystem
+    HelpDeskStaff --> TicketManagementSystem
+    TicketManagementSystem --> Ticket
+    TicketManagementSystem --> DataVisualizer

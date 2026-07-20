@@ -1,0 +1,20 @@
+
+sequenceDiagram
+    participant Main as main.py
+    participant G as Game
+    participant S as Snake
+    participant F as Food
+    main.py->>G: __init__(width, height)
+    G->>S: __init__(start_pos, start_direction)
+    G->>F: __init__()
+    loop Gameplay Loop
+        G->>S: move(direction)
+        S-->>G: 
+        opt Snake eats food
+            G->>S: grow()
+            S-->>G: 
+            G->>F: randomize_position(snake_segments)
+            F-->>G: position
+        end
+        G->>G: check_collision()
+    end

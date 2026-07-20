@@ -1,0 +1,44 @@
+
+sequenceDiagram
+participant M as Main
+participant S as SearchEngine
+participant I as Index
+participant R as Ranking
+participant S as Summary
+participant KB as KnowledgeBase
+participant DB as Database
+
+M->>S: search(query)
+S->>I: query_index(query)
+I->>KB: fetch_data(query)
+KB-->>I: return data
+I-->>S: return results
+S->>R: rank_results(results)
+R-->>S: return ranked_results
+S->>DB: store_results(results)
+DB-->>S: stored_results
+
+M->>S: update_ticket_status(ticket_id, new_status)
+S->>KB: fetch_data(ticket_id)
+KB-->>S: return ticket_data
+S->>DB: update_ticket_status(ticket_id, new_status)
+
+M->>S: get_all_tickets()
+S->>I: query_index(query)
+I->>KB: fetch_data(query)
+KB-->>I: return data
+I-->>S: return results
+S-->>M: return results
+
+M->>S: get_helpdesk_staffs()
+S->>I: query_index(query)
+I->>KB: fetch_data(query)
+KB-->>I: return data
+I-->>S: return staffs
+S-->>M: return staffs
+
+M->>S: assign_ticket_to_staff(ticket_id, staff_id)
+S->>KB: fetch_data(ticket_id)
+KB-->>S: return ticket_data
+S->>DB: update_ticket_status(ticket_id, new_status)
+

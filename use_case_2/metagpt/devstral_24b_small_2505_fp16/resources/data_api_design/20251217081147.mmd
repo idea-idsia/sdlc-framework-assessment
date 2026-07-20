@@ -1,0 +1,47 @@
+
+classDiagram
+    class User {
+        +id: int
+        +username: str
+        +email: str
+        +password: str
+        +role: str
+        +__init__(self, username: str, email: str, password: str, role: str)
+        +save()
+    }
+    class Ticket {
+        +id: int
+        +reporter: User
+        +status: str
+        +category: str
+        +description: str
+        +messages: List[Message]
+        +__init__(self, reporter: User, category: str, description: str)
+        +save()
+    }
+    class Message {
+        +id: int
+        +ticket: Ticket
+        +sender: User
+        +content: str
+        +timestamp: datetime
+        +__init__(self, ticket: Ticket, sender: User, content: str)
+        +save()
+    }
+    class TicketView {
+        +get_all_tickets() List[Ticket]
+        +create_ticket(data: dict) Ticket
+        +update_ticket(ticket_id: int, data: dict) Ticket
+        +delete_ticket(ticket_id: int)
+    }
+    class UserView {
+        +register_user(data: dict) User
+        +login_user(username: str, password: str) User
+    }
+    class AnalysisService {
+        +get_trends() Dict[str, Any]
+        +generate_report() str
+    }
+    User --> Ticket : reports
+    Ticket --> Message : contains
+    User --> Message : sends

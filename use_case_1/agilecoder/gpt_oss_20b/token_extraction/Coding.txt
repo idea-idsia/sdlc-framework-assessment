@@ -1,0 +1,1179 @@
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Product Owner. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+AgileCoder is using Agile Scrum for software development.
+You are responsible for maximizing the value delivered by the team by ensuring that the team backlog is aligned with customer and stakeholder needs.
+Here is a new customer's task: # Prompt: Create a snake game in Python
+## Requirements:
+### Game Board:
+- Create a grid-based game board.
+- Define the dimensions of the grid (e.g., 10x10).
+- Display the grid on the screen.
+### Snake Initialization:
+- Place the snake on the game board.
+- Define the initial length and starting position of the snake.
+- Choose a direction for the snake to start moving immediately, without user input (e.g., right).
+### Snake Movement:
+- Implement arrow key controls for snake movement.
+- Ensure the snake moves continuously in the chosen direction.
+- Update the snake’s position on the grid.
+### Food Generation:
+- Generate food at random positions on the game board.
+- Ensure food doesn’t appear on the snake’s body.
+### Collision Handling:
+- Detect collisions between the snake and the game board boundaries.
+- Detect collisions between the snake’s head and its body.
+- Detect collisions between the snake’s head and the food.
+### Snake Growth:
+- Increase the length of the snake when it consumes food, adding a new segment to the snake’s body.
+### Score Display:
+- Implement a scoring system.
+- Display the current score on the screen.
+### Game Over Condition:
+- Trigger a game over scenario when the snake collides with the boundaries.
+- Trigger a game over scenario when the snake collides with its own body.
+- Display a game over message.
+- Allow the player to restart the game.
+### Graphics and User Interface:
+- Use graphics or ASCII characters to represent the snake and food.
+- Design a user-friendly interface with clear instructions.
+### Animations and Effects:
+- Add animations for snake movement and growth.
+- Implement visual effects for collisions and food consumption..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+**`constants.py`**
+```python
+'''
+This module holds all global constants used throughout the Snake game.
+'''
+
+# Grid configuration
+GRID_SIZE = 10          # 10x10 grid
+CELL_SIZE = 40          # pixels per cell
+
+# Screen dimensions
+SCREEN_WIDTH = GRID_SIZE * CELL_SIZE
+SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE
+
+# Game configuration
+FPS = 10                # frames per second
+MOVE_EVENT = pygame.USEREVENT + 1  # custom event for snake movement
+MOVE_DELAY = 150        # milliseconds between automatic moves
+
+# Colors (R, G, B)
+COLOR_BG = (0, 0, 0)          # black background
+COLOR_SNAKE = (0, 255, 0)     # green snake
+COLOR_FOOD = (255, 0, 0)      # red food
+COLOR_TEXT = (255, 255, 255)  # white text
+```
+
+
+**`snake.py`**
+```python
+'''
+Snake model representing the snake's body, movement and collision logic.
+'''
+import pygame
+
+class Snake:
+    """
+    Represents the snake on the board.
+
+    Attributes
+    ----------
+    body : list of tuples
+        List of (x, y) coordinates for each segment, head first.
+    direction : tuple
+        Current movement direction as (dx, dy).
+    """
+    def __init__(self, grid_size):
+        """
+        Initialize the snake with a default length of 3, centered in the grid,
+        moving to the right.
+
+        Parameters
+        ----------
+        grid_size : int
+            Size of the square grid.
+        """
+        self.grid_size = grid_size
+        center = grid_size // 2
+        self.body = [
+            (center - 1, center),
+            (center, center),
+            (center + 1, center)
+        ]
+        self.direction = (1, 0)  # moving right initially
+
+    def set_direction(self, new_dir):
+        """
+        Update the snake's direction if it's not directly opposite to current.
+
+        Parameters
+        ----------
+        new_dir : tuple
+            New direction vector (dx, dy).
+        """
+        opposite = (-self.direction[0], -self.direction[1])
+        if new_dir != opposite:
+            self.direction = new_dir
+
+    def move(self):
+        """
+        Move the snake one step forward in the current direction.
+        """
+        head_x, head_y = self.body[0]
+        dx, dy = self.direction
+        new_head = (head_x + dx, head_y + dy)
+        self.body.insert(0, new_head)
+        self.body.pop()  # remove tail segment
+
+    def grow(self):
+        """
+        Grow the snake by adding a new segment at the current tail position.
+        """
+        tail = self.body[-1]
+        self.body.append(tail)
+
+    def collides_with_self(self):
+        """
+        Check if the snake's head collides with its body.
+
+        Returns
+        -------
+        bool
+            True if collision occurs, else False.
+        """
+        return self.body[0] in self.body[1:]
+
+    def collides_with_wall(self):
+        """
+        Check if the snake's head collides with the grid boundaries.
+
+        Returns
+        -------
+        bool
+            True if collision occurs, else False.
+        """
+        head_x, head_y = self.body[0]
+        return not (0 <= head_x < self.grid_size and 0 <= head_y < self.grid_size)
+```
+
+
+**`food.py`**
+```python
+'''
+Food model that handles random placement on the grid avoiding the snake.
+'''
+import random
+import pygame
+
+class Food:
+    """
+    Represents the food item on the board.
+
+    Attributes
+    ----------
+    position : tuple
+        Current (x, y) position of the food.
+    """
+    def __init__(self, grid_size, snake):
+        """
+        Initialize food at a random position not occupied by the snake.
+
+        Parameters
+        ----------
+        grid_size : int
+            Size of the square grid.
+        snake : Snake
+            Reference to the snake instance to avoid overlapping.
+        """
+        self.grid_size = grid_size
+        self.snake = snake
+        self.position = self._random_position()
+
+    def _random_position(self):
+        """
+        Generate a random position on the grid not occupied by the snake.
+
+        Returns
+        -------
+        tuple
+            (x, y) coordinates of the new food.
+        """
+        available_positions = [
+            (x, y)
+            for x in range(self.grid_size)
+            for y in range(self.grid_size)
+            if (x, y) not in self.snake.body
+        ]
+        return random.choice(available_positions)
+
+    def respawn(self):
+        """
+        Respawn food at a new random position.
+        """
+        self.position = self._random_position()
+```
+
+
+**`game.py`**
+```python
+'''
+Main game engine that orchestrates the Snake game loop, rendering, and events.
+'''
+import pygame
+import sys
+from constants import *
+from snake import Snake
+from food import Food
+
+class Game:
+    """
+    Core game class responsible for initializing Pygame, handling the game loop,
+    rendering, and user interactions.
+    """
+    def __init__(self):
+        pygame.init()
+        self.clock = pygame.time.Clock()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption('Snake Game')
+        self.font = pygame.font.SysFont(None, 36)
+
+        self.reset_game()
+
+    def reset_game(self):
+        """
+        Reset all game state to start a new game.
+        """
+        self.snake = Snake(GRID_SIZE)
+        self.food = Food(GRID_SIZE, self.snake)
+        self.score = 0
+        self.game_over = False
+        pygame.time.set_timer(MOVE_EVENT, MOVE_DELAY)
+
+    def run(self):
+        """
+        Main game loop. Handles events, updates, and rendering until exit.
+        """
+        while True:
+            self.handle_events()
+            if not self.game_over:
+                self.update()
+            self.render()
+            self.clock.tick(FPS)
+
+    def handle_events(self):
+        """
+        Process all Pygame events, including keyboard input and timers.
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == MOVE_EVENT and not self.game_over:
+                self.snake.move()
+                self.check_collisions()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.snake.set_direction((-1, 0))
+                elif event.key == pygame.K_RIGHT:
+                    self.snake.set_direction((1, 0))
+                elif event.key == pygame.K_UP:
+                    self.snake.set_direction((0, -1))
+                elif event.key == pygame.K_DOWN:
+                    self.snake.set_direction((0, 1))
+                elif event.key == pygame.K_r and self.game_over:
+                    self.reset_game()
+
+    def update(self):
+        """
+        Update game logic per frame (currently handled in events).
+        """
+        pass  # All updates are event-driven
+
+    def check_collisions(self):
+        """
+        Check for collisions with walls, self, or food and handle them.
+        """
+        # Wall collision
+        if self.snake.collides_with_wall():
+            self.game_over = True
+            return
+
+        # Self collision
+        if self.snake.collides_with_self():
+            self.game_over = True
+            return
+
+        # Food collision
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            self.score += 1
+            self.food.respawn()
+
+    def render(self):
+        """
+        Draw the current game state to the screen.
+        """
+        self.screen.fill(COLOR_BG)
+        self.draw_grid()
+        self.draw_food()
+        self.draw_snake()
+        self.draw_score()
+        if self.game_over:
+            self.draw_game_over()
+        pygame.display.flip()
+
+    def draw_grid(self):
+        """
+        Draw the grid lines for visual guidance.
+        """
+        for x in range(0, SCREEN_WIDTH, CELL_SIZE):
+            pygame.draw.line(self.screen, COLOR_TEXT, (x, 0), (x, SCREEN_HEIGHT))
+        for y in range(0, SCREEN_HEIGHT, CELL_SIZE):
+            pygame.draw.line(self.screen, COLOR_TEXT, (0, y), (SCREEN_WIDTH, y))
+
+    def draw_snake(self):
+        """
+        Render the snake on the board.
+        """
+        for segment in self.snake.body:
+            rect = pygame.Rect(segment[0]*CELL_SIZE, segment[1]*CELL_SIZE,
+                               CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, COLOR_SNAKE, rect)
+
+    def draw_food(self):
+        """
+        Render the food item on the board.
+        """
+        x, y = self.food.position
+        center = (x * CELL_SIZE + CELL_SIZE//2, y * CELL_SIZE + CELL_SIZE//2)
+        radius = CELL_SIZE // 2 - 4
+        pygame.draw.circle(self.screen, COLOR_FOOD, center, radius)
+
+    def draw_score(self):
+        """
+        Display the current score at the top-left corner.
+        """
+        score_surf = self.font.render(f'Score: {self.score}', True, COLOR_TEXT)
+        self.screen.blit(score_surf, (10, 10))
+
+    def draw_game_over(self):
+        """
+        Display game over message and restart instruction.
+        """
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))  # semi-transparent overlay
+        self.screen.blit(overlay, (0, 0))
+
+        msg = self.font.render('Game Over! Press R to Restart', True, COLOR_TEXT)
+        msg_rect = msg.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+        self.screen.blit(msg, msg_rect)
+```
+
+
+**`main.py`**
+```python
+'''
+Entry point for the Snake game. Instantiates the Game class and starts the loop.
+'''
+import sys
+from game import Game
+
+def main():
+    game = Game()
+    game.run()
+
+if __name__ == "__main__":
+    main()
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: # Prompt: Create a snake game in Python
+## Requirements:
+### Game Board:
+- Create a grid-based game board.
+- Define the dimensions of the grid (e.g., 10x10).
+- Display the grid on the screen.
+### Snake Initialization:
+- Place the snake on the game board.
+- Define the initial length and starting position of the snake.
+- Choose a direction for the snake to start moving immediately, without user input (e.g., right).
+### Snake Movement:
+- Implement arrow key controls for snake movement.
+- Ensure the snake moves continuously in the chosen direction.
+- Update the snake’s position on the grid.
+### Food Generation:
+- Generate food at random positions on the game board.
+- Ensure food doesn’t appear on the snake’s body.
+### Collision Handling:
+- Detect collisions between the snake and the game board boundaries.
+- Detect collisions between the snake’s head and its body.
+- Detect collisions between the snake’s head and the food.
+### Snake Growth:
+- Increase the length of the snake when it consumes food, adding a new segment to the snake’s body.
+### Score Display:
+- Implement a scoring system.
+- Display the current score on the screen.
+### Game Over Condition:
+- Trigger a game over scenario when the snake collides with the boundaries.
+- Trigger a game over scenario when the snake collides with its own body.
+- Display a game over message.
+- Allow the player to restart the game.
+### Graphics and User Interface:
+- Use graphics or ASCII characters to represent the snake and food.
+- Design a user-friendly interface with clear instructions.
+### Animations and Effects:
+- Add animations for snake movement and growth.
+- Implement visual effects for collisions and food consumption..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+constants.py
+```python
+'''
+This module holds all global constants used throughout the Snake game.
+'''
+# Grid configuration
+GRID_SIZE = 10          # 10x10 grid
+CELL_SIZE = 40          # pixels per cell
+
+# Screen dimensions
+SCREEN_WIDTH = GRID_SIZE * CELL_SIZE
+SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE
+
+# Game configuration
+FPS = 10                # frames per second
+MOVE_EVENT = pygame.USEREVENT + 1  # custom event for snake movement
+MOVE_DELAY = 150        # milliseconds between automatic moves
+
+# Colors (R, G, B)
+COLOR_BG = (0, 0, 0)          # black background
+COLOR_SNAKE = (0, 255, 0)     # green snake
+COLOR_FOOD = (255, 0, 0)      # red food
+COLOR_TEXT = (255, 255, 255)  # white text
+```
+
+snake.py
+```python
+'''
+Snake model representing the snake's body, movement and collision logic.
+'''
+import pygame
+
+class Snake:
+    """
+    Represents the snake on the board.
+
+    Attributes
+    ----------
+    body : list of tuples
+        List of (x, y) coordinates for each segment, head first.
+    direction : tuple
+        Current movement direction as (dx, dy).
+    """
+    def __init__(self, grid_size):
+        """
+        Initialize the snake with a default length of 3, centered in the grid,
+        moving to the right.
+
+        Parameters
+        ----------
+        grid_size : int
+            Size of the square grid.
+        """
+        self.grid_size = grid_size
+        center = grid_size // 2
+        self.body = [
+            (center - 1, center),
+            (center, center),
+            (center + 1, center)
+        ]
+        self.direction = (1, 0)  # moving right initially
+
+    def set_direction(self, new_dir):
+        """
+        Update the snake's direction if it's not directly opposite to current.
+
+        Parameters
+        ----------
+        new_dir : tuple
+            New direction vector (dx, dy).
+        """
+        opposite = (-self.direction[0], -self.direction[1])
+        if new_dir != opposite:
+            self.direction = new_dir
+
+    def move(self):
+        """
+        Move the snake one step forward in the current direction.
+        """
+        head_x, head_y = self.body[0]
+        dx, dy = self.direction
+        new_head = (head_x + dx, head_y + dy)
+        self.body.insert(0, new_head)
+        self.body.pop()  # remove tail segment
+
+    def grow(self):
+        """
+        Grow the snake by adding a new segment at the current tail position.
+        """
+        tail = self.body[-1]
+        self.body.append(tail)
+
+    def collides_with_self(self):
+        """
+        Check if the snake's head collides with its body.
+
+        Returns
+        -------
+        bool
+            True if collision occurs, else False.
+        """
+        return self.body[0] in self.body[1:]
+
+    def collides_with_wall(self):
+        """
+        Check if the snake's head collides with the grid boundaries.
+
+        Returns
+        -------
+        bool
+            True if collision occurs, else False.
+        """
+        head_x, head_y = self.body[0]
+        return not (0 <= head_x < self.grid_size and 0 <= head_y < self.grid_size)
+```
+
+food.py
+```python
+'''
+Food model that handles random placement on the grid avoiding the snake.
+'''
+import random
+import pygame
+
+class Food:
+    """
+    Represents the food item on the board.
+
+    Attributes
+    ----------
+    position : tuple
+        Current (x, y) position of the food.
+    """
+    def __init__(self, grid_size, snake):
+        """
+        Initialize food at a random position not occupied by the snake.
+
+        Parameters
+        ----------
+        grid_size : int
+            Size of the square grid.
+        snake : Snake
+            Reference to the snake instance to avoid overlapping.
+        """
+        self.grid_size = grid_size
+        self.snake = snake
+        self.position = self._random_position()
+
+    def _random_position(self):
+        """
+        Generate a random position on the grid not occupied by the snake.
+
+        Returns
+        -------
+        tuple
+            (x, y) coordinates of the new food.
+        """
+        available_positions = [
+            (x, y)
+            for x in range(self.grid_size)
+            for y in range(self.grid_size)
+            if (x, y) not in self.snake.body
+        ]
+        return random.choice(available_positions)
+
+    def respawn(self):
+        """
+        Respawn food at a new random position.
+        """
+        self.position = self._random_position()
+```
+
+game.py
+```python
+'''
+Main game engine that orchestrates the Snake game loop, rendering, and events.
+'''
+import pygame
+import sys
+from constants import *
+from snake import Snake
+from food import Food
+
+class Game:
+    """
+    Core game class responsible for initializing Pygame, handling the game loop,
+    rendering, and user interactions.
+    """
+    def __init__(self):
+        pygame.init()
+        self.clock = pygame.time.Clock()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption('Snake Game')
+        self.font = pygame.font.SysFont(None, 36)
+
+        self.reset_game()
+
+    def reset_game(self):
+        """
+        Reset all game state to start a new game.
+        """
+        self.snake = Snake(GRID_SIZE)
+        self.food = Food(GRID_SIZE, self.snake)
+        self.score = 0
+        self.game_over = False
+        pygame.time.set_timer(MOVE_EVENT, MOVE_DELAY)
+
+    def run(self):
+        """
+        Main game loop. Handles events, updates, and rendering until exit.
+        """
+        while True:
+            self.handle_events()
+            if not self.game_over:
+                self.update()
+            self.render()
+            self.clock.tick(FPS)
+
+    def handle_events(self):
+        """
+        Process all Pygame events, including keyboard input and timers.
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type == MOVE_EVENT and not self.game_over:
+                self.snake.move()
+                self.check_collisions()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.snake.set_direction((-1, 0))
+                elif event.key == pygame.K_RIGHT:
+                    self.snake.set_direction((1, 0))
+                elif event.key == pygame.K_UP:
+                    self.snake.set_direction((0, -1))
+                elif event.key == pygame.K_DOWN:
+                    self.snake.set_direction((0, 1))
+                elif event.key == pygame.K_r and self.game_over:
+                    self.reset_game()
+
+    def update(self):
+        """
+        Update game logic per frame (currently handled in events).
+        """
+        pass  # All updates are event-driven
+
+    def check_collisions(self):
+        """
+        Check for collisions with walls, self, or food and handle them.
+        """
+        # Wall collision
+        if self.snake.collides_with_wall():
+            self.game_over = True
+            return
+
+        # Self collision
+        if self.snake.collides_with_self():
+            self.game_over = True
+            return
+
+        # Food collision
+        if self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            self.score += 1
+            self.food.respawn()
+
+    def render(self):
+        """
+        Draw the current game state to the screen.
+        """
+        self.screen.fill(COLOR_BG)
+        self.draw_grid()
+        self.draw_food()
+        self.draw_snake()
+        self.draw_score()
+        if self.game_over:
+            self.draw_game_over()
+        pygame.display.flip()
+
+    def draw_grid(self):
+        """
+        Draw the grid lines for visual guidance.
+        """
+        for x in range(0, SCREEN_WIDTH, CELL_SIZE):
+            pygame.draw.line(self.screen, COLOR_TEXT, (x, 0), (x, SCREEN_HEIGHT))
+        for y in range(0, SCREEN_HEIGHT, CELL_SIZE):
+            pygame.draw.line(self.screen, COLOR_TEXT, (0, y), (SCREEN_WIDTH, y))
+
+    def draw_snake(self):
+        """
+        Render the snake on the board.
+        """
+        for segment in self.snake.body:
+            rect = pygame.Rect(segment[0]*CELL_SIZE, segment[1]*CELL_SIZE,
+                               CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, COLOR_SNAKE, rect)
+
+    def draw_food(self):
+        """
+        Render the food item on the board.
+        """
+        x, y = self.food.position
+        center = (x * CELL_SIZE + CELL_SIZE//2, y * CELL_SIZE + CELL_SIZE//2)
+        radius = CELL_SIZE // 2 - 4
+        pygame.draw.circle(self.screen, COLOR_FOOD, center, radius)
+
+    def draw_score(self):
+        """
+        Display the current score at the top-left corner.
+        """
+        score_surf = self.font.render(f'Score: {self.score}', True, COLOR_TEXT)
+        self.screen.blit(score_surf, (10, 10))
+
+    def draw_game_over(self):
+        """
+        Display game over message and restart instruction.
+        """
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))  # semi-transparent overlay
+        self.screen.blit(overlay, (0, 0))
+
+        msg = self.font.render('Game Over! Press R to Restart', True, COLOR_TEXT)
+        msg_rect = msg.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
+        self.screen.blit(msg, msg_rect)
+```
+
+main.py
+```python
+'''
+Entry point for the Snake game. Instantiates the Game class and starts the loop.
+'''
+import sys
+from game import Game
+
+def main():
+    game = Game()
+    game.run()
+
+if __name__ == "__main__":
+    main()
+```
+
+
+[AgileCoder, a software enterprise, employs Agile Scrum methodology for its software development endeavors. Its operations are fueled by a multiple of intelligent agents, comprising a Product Owner, a Development Team consisting of Programmers, Code Reviewers, and Software Test Engineers. With a multi-agent organizational framework, AgileCoder is dedicated to the mission of "revolutionizing the digital realm through programming."
+You are Code Reviewer. we are both working at AgileCoder. We share a common interest in collaborating to successfully complete a task assigned by a new customer.
+You can help programmers to assess source codes for software troubleshooting, fix bugs to increase code quality and robustness, and offer proposals to improve the source codes.
+Here is a new customer's task: # Prompt: Create a snake game in Python
+## Requirements:
+### Game Board:
+- Create a grid-based game board.
+- Define the dimensions of the grid (e.g., 10x10).
+- Display the grid on the screen.
+### Snake Initialization:
+- Place the snake on the game board.
+- Define the initial length and starting position of the snake.
+- Choose a direction for the snake to start moving immediately, without user input (e.g., right).
+### Snake Movement:
+- Implement arrow key controls for snake movement.
+- Ensure the snake moves continuously in the chosen direction.
+- Update the snake’s position on the grid.
+### Food Generation:
+- Generate food at random positions on the game board.
+- Ensure food doesn’t appear on the snake’s body.
+### Collision Handling:
+- Detect collisions between the snake and the game board boundaries.
+- Detect collisions between the snake’s head and its body.
+- Detect collisions between the snake’s head and the food.
+### Snake Growth:
+- Increase the length of the snake when it consumes food, adding a new segment to the snake’s body.
+### Score Display:
+- Implement a scoring system.
+- Display the current score on the screen.
+### Game Over Condition:
+- Trigger a game over scenario when the snake collides with the boundaries.
+- Trigger a game over scenario when the snake collides with its own body.
+- Display a game over message.
+- Allow the player to restart the game.
+### Graphics and User Interface:
+- Use graphics or ASCII characters to represent the snake and food.
+- Design a user-friendly interface with clear instructions.
+### Animations and Effects:
+- Add animations for snake movement and growth.
+- Implement visual effects for collisions and food consumption..
+To complete the task, you must write a response that appropriately solves the requested instruction based on your expertise and customer's needs.]
+
+main.py
+```python
+'''
+Entry point for the Snake game. Instantiates the Game class and starts the loop.
+'''
+import sys
+from game import Game
+
+def main():
+    game = Game()
+    game.run()
+
+if __name__ == "__main__":
+    main()
+```
+
+constants.py
+```python
+'''
+Module defining global constants used throughout the Snake game.
+'''
+import pygame  # Needed for pygame.USEREVENT
+
+# Grid configuration
+GRID_SIZE = 10          # 10x10 grid
+CELL_SIZE = 40          # pixels per cell
+
+# Screen dimensions
+SCREEN_WIDTH = GRID_SIZE * CELL_SIZE
+SCREEN_HEIGHT = GRID_SIZE * CELL_SIZE
+
+# Game configuration
+FPS = 10                # frames per second
+MOVE_EVENT = pygame.USEREVENT + 1  # custom event for snake movement
+MOVE_DELAY = 150        # milliseconds between automatic moves
+
+# Colors (R, G, B)
+COLOR_BG = (0, 0, 0)          # black background
+COLOR_SNAKE = (0, 255, 0)     # green snake
+COLOR_FOOD = (255, 0, 0)      # red food
+COLOR_TEXT = (255, 255, 255)  # white text
+```
+
+snake.py
+```python
+'''
+Module containing the Snake model representing the snake's body, movement and collision logic.
+'''
+import pygame
+
+class Snake:
+    """
+    Represents the snake on the board.
+    Attributes
+    ----------
+    body : list of tuples
+        List of (x, y) coordinates for each segment, head first.
+    direction : tuple
+        Current movement direction as (dx, dy).
+    """
+    def __init__(self, grid_size):
+        """
+        Initialize the snake with a default length of 3, centered in the grid,
+        moving to the right.
+        Parameters
+        ----------
+        grid_size : int
+            Size of the square grid.
+        """
+        self.grid_size = grid_size
+        center = grid_size // 2
+        self.body = [
+            (center - 1, center),
+            (center, center),
+            (center + 1, center)
+        ]
+        self.direction = (1, 0)  # moving right initially
+
+    def set_direction(self, new_dir):
+        """
+        Update the snake's direction if it's not directly opposite to current.
+        Parameters
+        ----------
+        new_dir : tuple
+            New direction vector (dx, dy).
+        """
+        opposite = (-self.direction[0], -self.direction[1])
+        if new_dir != opposite:
+            self.direction = new_dir
+
+    def move(self):
+        """
+        Move the snake one step forward in the current direction.
+        """
+        head_x, head_y = self.body[0]
+        dx, dy = self.direction
+        new_head = (head_x + dx, head_y + dy)
+        self.body.insert(0, new_head)
+        self.body.pop()  # remove tail segment
+
+    def grow(self):
+        """
+        Grow the snake by adding a new segment at the current tail position.
+        """
+        tail = self.body[-1]
+        self.body.append(tail)
+
+    def collides_with_self(self):
+        """
+        Check if the snake's head collides with its body.
+        Returns
+        -------
+        bool
+            True if collision occurs, else False.
+        """
+        return self.body[0] in self.body[1:]
+
+    def collides_with_wall(self):
+        """
+        Check if the snake's head collides with the grid boundaries.
+        Returns
+        -------
+        bool
+            True if collision occurs, else False.
+        """
+        head_x, head_y = self.body[0]
+        return not (0 <= head_x < self.grid_size and 0 <= head_y < self.grid_size)
+```
+
+food.py
+```python
+'''
+Module that handles food generation on the grid, ensuring it doesn't overlap with the snake.
+'''
+import random
+import pygame
+
+class Food:
+    """
+    Represents the food item on the board.
+    Attributes
+    ----------
+    position : tuple
+        Current (x, y) position of the food.
+    """
+    def __init__(self, grid_size, snake):
+        """
+        Initialize food at a random position not occupied by the snake.
+        Parameters
+        ----------
+        grid_size : int
+            Size of the square grid.
+        snake : Snake
+            Reference to the snake instance to avoid overlapping.
+        """
+        self.grid_size = grid_size
+        self.snake = snake
+        self.position = self._random_position()
+
+    def _random_position(self):
+        """
+        Generate a random position on the grid not occupied by the snake.
+        Uses a set for efficient lookup.
+        If no positions are available (the snake fills the board), returns None.
+        """
+        all_positions = {(x, y) for x in range(self.grid_size) for y in range(self.grid_size)}
+        occupied = set(self.snake.body)
+        free_positions = all_positions - occupied
+        if not free_positions:
+            return None
+        return random.choice(list(free_positions))
+
+    def respawn(self):
+        """
+        Respawn food at a new random position or handle the full-board scenario gracefully.
+        """
+        new_pos = self._random_position()
+        if new_pos is not None:
+            self.position = new_pos
+        else:
+            # If the board is full, keep the old food to avoid crash
+            pass
+```
+
+game.py
+```python
+'''
+Main game engine that orchestrates the Snake game loop, rendering, and events.
+'''
+import pygame
+import sys
+from constants import *
+from snake import Snake
+from food import Food
+
+class Game:
+    """
+    Core game class responsible for initializing Pygame, handling the game loop,
+    rendering, and user interactions.
+    """
+    def __init__(self):
+        pygame.init()
+        self.clock = pygame.time.Clock()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        pygame.display.set_caption('Snake Game')
+        self.font = pygame.font.SysFont(None, 36)
+        self.reset_game()
+
+    def reset_game(self):
+        """
+        Reset all game state to start a new game.
+        """
+        self.snake = Snake(GRID_SIZE)
+        self.food = Food(GRID_SIZE, self.snake)
+        self.score = 0
+        self.game_over = False
+        pygame.time.set_timer(MOVE_EVENT, MOVE_DELAY)
+
+    def run(self):
+        """
+        Main game loop. Handles events, updates, and rendering until exit.
+        """
+        while True:
+            self.handle_events()
+            if not self.game_over:
+                self.update()
+            self.render()
+            self.clock.tick(FPS)
+
+    def handle_events(self):
+        """
+        Process all Pygame events, including keyboard input and timers.
+        """
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == MOVE_EVENT and not self.game_over:
+                self.check_collisions_and_move()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    self.snake.set_direction((-1, 0))
+                elif event.key == pygame.K_RIGHT:
+                    self.snake.set_direction((1, 0))
+                elif event.key == pygame.K_UP:
+                    self.snake.set_direction((0, -1))
+                elif event.key == pygame.K_DOWN:
+                    self.snake.set_direction((0, 1))
+                elif event.key == pygame.K_r and self.game_over:
+                    self.reset_game()
+
+    def update(self):
+        """
+        Update game logic per frame (currently handled in events).
+        """
+        pass  # All updates are event-driven
+
+    def check_collisions_and_move(self):
+        """
+        Check for collisions with walls, self, or food before moving,
+        then move the snake and handle post-move effects.
+        """
+        head_x, head_y = self.snake.body[0]
+        dx, dy = self.snake.direction
+        new_head = (head_x + dx, head_y + dy)
+
+        # Wall collision
+        if not (0 <= new_head[0] < GRID_SIZE and 0 <= new_head[1] < GRID_SIZE):
+            self.game_over = True
+            pygame.time.set_timer(MOVE_EVENT, 0)
+            return
+
+        # Self collision (including tail cell)
+        if new_head in self.snake.body:
+            self.game_over = True
+            pygame.time.set_timer(MOVE_EVENT, 0)
+            return
+
+        # Move snake
+        self.snake.move()
+
+        # Food collision
+        if self.food.position is not None and self.snake.body[0] == self.food.position:
+            self.snake.grow()
+            self.score += 1
+            self.food.respawn()
+
+    def render(self):
+        """
+        Draw the current game state to the screen.
+        """
+        self.screen.fill(COLOR_BG)
+        self.draw_grid()
+        self.draw_food()
+        self.draw_snake()
+        self.draw_score()
+        if self.game_over:
+            self.draw_game_over()
+        pygame.display.flip()
+
+    def draw_grid(self):
+        """
+        Draw the grid lines for visual guidance.
+        """
+        for x in range(0, SCREEN_WIDTH, CELL_SIZE):
+            pygame.draw.line(self.screen, COLOR_TEXT, (x, 0), (x, SCREEN_HEIGHT))
+        for y in range(0, SCREEN_HEIGHT, CELL_SIZE):
+            pygame.draw.line(self.screen, COLOR_TEXT, (0, y), (SCREEN_WIDTH, y))
+
+    def draw_snake(self):
+        """
+        Render the snake on the board.
+        """
+        for segment in self.snake.body:
+            rect = pygame.Rect(segment[0]*CELL_SIZE, segment[1]*CELL_SIZE,
+                               CELL_SIZE, CELL_SIZE)
+            pygame.draw.rect(self.screen, COLOR_SNAKE, rect)
+
+    def draw_food(self):
+        """
+        Render the food item on the board.
+        """
+        if self.food.position is None:
+            return
+        x, y = self.food.position
+        center = (x * CELL_SIZE + CELL_SIZE//2, y * CELL_SIZE + CELL_SIZE//2)
+        radius = CELL_SIZE // 2 - 4
+        pygame.draw.circle(self.screen, COLOR_FOOD, center, radius)
+
+    def draw_score(self):
+        """
+        Display the current score at the top-left corner.
+        """
+        score_surf = self.font.render(f'Score: {self.score}', True, COLOR_TEXT)
+        self.screen.blit(score_surf, (10, 10))
+
+    def draw_game_over(self):
+        """
+        Display game over message and restart instruction, ensuring score
+        remains visible above the semi-transparent overlay.
+        """
+        # Semi-transparent overlay
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        self.screen.blit(overlay, (0, 0))
+        # Score displayed on top of overlay
+        score_surf = self.font.render(f'Score: {self.score}', True, COLOR_TEXT)
+        score_rect = score_surf.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 30))
+        self.screen.blit(score_surf, score_rect)
+        # Game over message
+        msg = self.font.render('Game Over! Press R to Restart', True, COLOR_TEXT)
+        msg_rect = msg.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + 20))
+        self.screen.blit(msg, msg_rect)
+```

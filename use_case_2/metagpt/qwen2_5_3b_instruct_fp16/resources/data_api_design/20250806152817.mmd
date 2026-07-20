@@ -1,0 +1,44 @@
+
+classDiagram
+    class User {
+        -username: str
+        -password: str
+        -email: str
+        +login(username: str, password: str) bool
+        +register(username: str, password: str, email: str) bool
+    }
+    class Ticket {
+        -id: int
+        -title: str
+        -description: str
+        -status: str # 'open', 'active', 'closed'
+        -created_at: datetime.datetime
+        -modified_at: datetime.datetime
+        +reporter_id: int
+        +assignee_id: int
+        +update_status(new_status: str) bool
+    }
+    class Message {
+        -id: int
+        -ticket_id: int
+        -sender_id: int
+        -receiver_id: int
+        -content: str
+        -timestamp: datetime.datetime
+        +send(content: str, receiver_id: int) bool
+        +receive(ticket_id: int) list[str]
+    }
+    class DataVisualization {
+        -tickets_data: dict
+        -users_data: dict
+        -metrics: dict
+        +fetch_tickets() dict
+        +fetch_users() dict
+        +generate_report() str
+    }
+    User --> Ticket
+    User --> Message
+    User --> DataVisualization
+    Ticket --> Message
+    Ticket --> DataVisualization
+    Message --> DataVisualization

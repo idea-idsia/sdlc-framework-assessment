@@ -1,0 +1,27 @@
+
+sequenceDiagram
+    participant M as Main
+    participant U as User
+    participant T as Ticket
+    participant HS as HelpdeskStaff
+    participant TR as TicketReport
+    participant TSC as TicketStatusChange
+    participant A as Analytics
+    M->>U: login(username, password)
+    U-->>M: return user_id
+    M->>T: create_ticket(user_id, title, description)
+    T-->>M: return ticket_id
+    M->>HS: get_open_tickets()
+    HS-->>M: return open_tickets_list
+    M->>A: get_open_tickets_count(data)
+    A-->>M: return open_tickets_count
+    M->>T: update_ticket(ticket_id, new_description)
+    T-->>M: return updated_ticket
+    M->>HS: change_status(ticket_id, status_change)
+    HS-->>M: return updated_ticket_status
+    M->>TR: create_report(ticket_id, reporter_user_id)
+    TR-->>M: return report_id
+    M->>TSC: update_status(report_id, new_status_change, user_id, change_at)
+    TSC-->>M: return updated_status_change
+    M->>A: get_closed_tickets_count(data)
+    A-->>M: return closed_tickets_count

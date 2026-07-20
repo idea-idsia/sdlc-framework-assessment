@@ -1,0 +1,62 @@
+
+classDiagram
+    class Game {
+        -grid: Grid
+        -snake: Snake
+        -food: Food
+        -renderer: Renderer
+        -input_handler: InputHandler
+        -score: int
+        -running: bool
+        +__init__(window: curses.window)
+        +start() void
+        +handle_input() void
+        +update() void
+        +render() void
+        +game_over() void
+    }
+    class Snake {
+        -body: List[Tuple[int,int]]
+        -direction: Tuple[int,int]
+        +__init__(start_pos: Tuple[int,int], start_dir: Tuple[int,int])
+        +move() void
+        +grow() void
+        +set_direction(new_dir: Tuple[int,int]) void
+        +collides_with_self() bool
+        +collides_with_wall(grid: Grid) bool
+        +head() Tuple[int,int]
+    }
+    class Food {
+        -position: Tuple[int,int]
+        +__init__(grid: Grid, snake: Snake)
+        +generate_new(grid: Grid, snake: Snake) void
+        +position() Tuple[int,int]
+    }
+    class Grid {
+        -width: int
+        -height: int
+        +__init__(width: int, height: int)
+        +in_bounds(pos: Tuple[int,int]) bool
+        +to_screen_coords(pos: Tuple[int,int]) Tuple[int,int]
+    }
+    class Renderer {
+        -window: curses.window
+        +__init__(window: curses.window)
+        +draw(grid: Grid, snake: Snake, food: Food, score: int, game_over: bool) void
+        +clear() void
+    }
+    class InputHandler {
+        -last_direction: Tuple[int,int]
+        +__init__()
+        +get_direction(key: int) Tuple[int,int]
+    }
+    Game --> Snake
+    Game --> Food
+    Game --> Grid
+    Game --> Renderer
+    Game --> InputHandler
+    Snake --> Grid
+    Food --> Grid
+    Renderer --> Grid
+    Renderer --> Snake
+    Renderer --> Food

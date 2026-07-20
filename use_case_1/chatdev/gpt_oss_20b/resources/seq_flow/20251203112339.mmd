@@ -1,0 +1,37 @@
+
+sequenceDiagram
+    participant M as main
+    participant G as Game
+    participant I as InputHandler
+    participant S as Snake
+    participant F as Food
+    participant R as Renderer
+    participant Gd as Grid
+
+    M->>G: __init__(curses_window)
+    G->>Gd: __init__(10,10)
+    G->>S: __init__(center, RIGHT)
+    G->>F: __init__(Gd, S)
+    G->>R: __init__(curses_window)
+    G->>I: __init__()
+    G->>G: start()
+
+    loop every tick
+        G->>I: get_direction(key)
+        I->>G: set_direction
+        G->>S: move()
+        G->>S: collides_with_self() -> bool
+        alt collision
+            G->>G: game_over()
+            G->>R: draw(..., game_over=true)
+            G->>G: break loop
+        else
+            G->>F: position()
+            alt ate food
+                G->>S: grow()
+                G->>S: score++
+                G->>F: generate_new(Gd, S)
+            end
+            G->>R: draw(..., game_over=false)
+        end
+    end

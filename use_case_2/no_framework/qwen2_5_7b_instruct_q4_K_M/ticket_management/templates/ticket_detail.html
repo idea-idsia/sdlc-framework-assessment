@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Ticket Detail</h1>
+<p>ID: {{ ticket.id }}</p>
+<p>Status: {{ ticket.status }}</p>
+<p>Category: {{ ticket.category }}</p>
+<p>Description: {{ ticket.description }}</p>
+<p>Opening Date: {{ ticket.opening_date }}</p>
+<p>Last Modification Date: {{ ticket.last_modification_date }}</p>
+
+<h2>Messages</h2>
+<form action="{{ url_for('message', ticket_id=ticket.id) }}" method="post">
+    <textarea name="content"></textarea><br>
+    <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
+    <button type="submit">Submit Message</button>
+</form>
+
+<table border="1">
+    <tr>
+        <th>User Type</th>
+        <th>Content</th>
+        <th>Created At</th>
+    </tr>
+    {% for message in messages %}
+    <tr>
+        <td>{{ message.user_type }}</td>
+        <td>{{ message.content }}</td>
+        <td>{{ message.created_at }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -160,31 +160,31 @@ Notation:
 
 Qualitative evaluation results per MAF-LLM combination can be seen below. Included are only combinations resulting in an executable code satisfying at least one functional requirement. 
 
-|LLM | Exist functioning GoBack option? | GUI size permits content visibility? | Is system status clear? | Error prevention exists? | Each GUI element has its purpose? | Are pages readily reachable? | Is GUI implemented via HTML? | Max number of UI elements per page|
-|----|----------------------------------|--------------------------------------|-------------------------|--------------------------|------------------------------------------|------------------------------|------------------------------|-----------------------------------|
-| MetaGPT+qwen2_5_32b_instruct_q4_K_M | N | N | N | N | N | N | N | na |
-| MetaGPT+gemma3_27b_it_fp16_run_2 | N (exists, but not functioning) | Y | N | N | N | N | Y | 3 |
-| ChatDev+qwen2_5_32b_instruct_q4_K_M | Yes (opens always a new window) | Yes | Yes | No | No | Yes | No | 3 |
-| ChatDev+gemma3_27b_it_fp16_run_2 | No | No | No | No | No | No | No | na |
-| ChatDev+llama3_3_70b_instruct_q8_0_run_3 | No | Yes | Yes | No | Yes | No | No | 4 |
-| ChatDev+gpt_oss_20b_run_2 | No | Yes | Yes | No | Yes | No | No | 5 |
-| ChatDev+llama3_3_70b_instruct_q3_K_M_run_3 | No | Yes | No | No | No | No | No | 3 |
-| ChatDev+llama3_3_70b_instruct_q4_K_M_run_2 | No | No | Yes | No | No | Yes | No | infinity |
-| ChatDev+devstral_24b_small_2505_fp16_run_3 | No | Yes | Yes | No | No | Yes | No | 5 |
-| AgileCoder+qwen2_5_32b_instruct_q4_K_M_run_3 | No | Yes | No | No | No | No | No | infinity |
-| AgileCoder+gemma3_27b_it_fp16_run_3 | No | Yes | No | No | No | No | No | 3 |
-| AgileCoder+qwen2_5_7b_instruct_fp16_run_2 | No | Yes | No | No | No | No | No | 4 |
-| AgileCoder+qwen2_5_7b_instruct_q4_K_M_run_3 | No | Yes | No | No | No | No | No | 3 |
-| AgileCoder+gpt_oss_20b | No | Yes | No | No | No | No | No | 4 |
-| AgileCoder+llama3_3_70b_instruct_q3_K_M_run_2 | No | Yes | No | No | No | Yes | No | 5 |
-| AgileCoder+llama3_3_70b_instruct_q4_K_M_run_3 | No | No | No | No | Yes | No | No | infinity |
-| HyperAgent+qwen2_5_32b_instruct_q4_K_M | No | na | No | No | na | No | No | na |
-| HyperAgent+gemma3_27b_it_fp16_run_2 | No | Yes | No | No | No | No | No | 2 |
-| HyperAgent+llama3_3_70b_instruct_q8_0 | No | Yes | No | No | No | No | No | 2 |
-| HyperAgent+qwen2_5_7b_instruct_q4_K_M_run_2 | No | Yes | No | No | No | No | No | 4 |
-| HyperAgent+llama3_2_3b_instruct_fp16 | No | Yes | No | No | No | No | No | 3 |
-| HyperAgent+llama3_2_3b_instruct_q4_K_M_run_3 | No | Yes | No | No | No | No | No | 5 |
-| HyperAgent+qwen2_5_3b_instruct_q4_K_M | No | Yes | No | No | No | No | No | 10 |
-| HyperAgent+gpt_oss_20b_run_2 | na | na | na | na | na | na | na | na |
-| HyperAgent+llama3_3_70b_instruct_q4_K_M | No | Yes | No | No | No | No | No | 4 |
-| HyperAgent+devstral_24b_small_2505_fp16 | No | No | No | No | No | No | Yes | 1 |
+| Framework | LLM | Exist functioning GoBack option? | GUI size permits content visibility? | Is system status clear? | Error prevention exists? | Each GUI element has its purpose? | Are pages readily reachable? | Is GUI implemented via HTML? | Max number of UI elements per page|
+|-----------|-----|----------------------------------|--------------------------------------|-------------------------|--------------------------|------------------------------------------|------------------------------|------------------------------|-----------------------------------|
+| MetaGPT | qwen2_5_32b_instruct_q4_K_M | N | N | N | N | N | N | N | na |
+| MetaGPT | gemma3_27b_it_fp16_run_2 | N (exists, but not functioning) | Y | N | N | N | N | Y | 3 |
+| ChatDev | qwen2_5_32b_instruct_q4_K_M | Yes (opens always a new window) | Yes | Yes | No | No | Yes | No | 3 |
+| ChatDev | gemma3_27b_it_fp16_run_2 | No | No | No | No | No | No | No | na |
+| ChatDev | llama3_3_70b_instruct_q8_0_run_3 | No | Yes | Yes | No | Yes | No | No | 4 |
+| ChatDev | gpt_oss_20b_run_2 | No | Yes | Yes | No | Yes | No | No | 5 |
+| ChatDev | llama3_3_70b_instruct_q3_K_M_run_3 | No | Yes | No | No | No | No | No | 3 |
+| ChatDev | llama3_3_70b_instruct_q4_K_M_run_2 | No | No | Yes | No | No | Yes | No | infinity |
+| ChatDev | devstral_24b_small_2505_fp16_run_3 | No | Yes | Yes | No | No | Yes | No | 5 |
+| AgileCoder | qwen2_5_32b_instruct_q4_K_M_run_3 | No | Yes | No | No | No | No | No | infinity |
+| AgileCoder | gemma3_27b_it_fp16_run_3 | No | Yes | No | No | No | No | No | 3 |
+| AgileCoder | qwen2_5_7b_instruct_fp16_run_2 | No | Yes | No | No | No | No | No | 4 |
+| AgileCoder | qwen2_5_7b_instruct_q4_K_M_run_3 | No | Yes | No | No | No | No | No | 3 |
+| AgileCoder | gpt_oss_20b | No | Yes | No | No | No | No | No | 4 |
+| AgileCoder | llama3_3_70b_instruct_q3_K_M_run_2 | No | Yes | No | No | No | Yes | No | 5 |
+| AgileCoder | llama3_3_70b_instruct_q4_K_M_run_3 | No | No | No | No | Yes | No | No | infinity |
+| HyperAgent | qwen2_5_32b_instruct_q4_K_M | No | na | No | No | na | No | No | na |
+| HyperAgent | gemma3_27b_it_fp16_run_2 | No | Yes | No | No | No | No | No | 2 |
+| HyperAgent | llama3_3_70b_instruct_q8_0 | No | Yes | No | No | No | No | No | 2 |
+| HyperAgent | qwen2_5_7b_instruct_q4_K_M_run_2 | No | Yes | No | No | No | No | No | 4 |
+| HyperAgent | llama3_2_3b_instruct_fp16 | No | Yes | No | No | No | No | No | 3 |
+| HyperAgent | llama3_2_3b_instruct_q4_K_M_run_3 | No | Yes | No | No | No | No | No | 5 |
+| HyperAgent | qwen2_5_3b_instruct_q4_K_M | No | Yes | No | No | No | No | No | 10 |
+| HyperAgent | gpt_oss_20b_run_2 | na | na | na | na | na | na | na | na |
+| HyperAgent | llama3_3_70b_instruct_q4_K_M | No | Yes | No | No | No | No | No | 4 |
+| HyperAgent | devstral_24b_small_2505_fp16 | No | No | No | No | No | No | Yes | 1 |

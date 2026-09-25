@@ -13,10 +13,9 @@ is suppressed for anonymity and will be revealed upon acceptance.
 
 ### Qualitative evaluation
 
-Some results and images inserted in use cases README files. 
-More results will be published.
+Results and images inserted in use cases README files. 
 
-Qualitative evaluation metrics include Failure-related metrics, Usability and Appearance metrics. We aimed at defining Usability and Appearance metrics in an objective way, however in case of Snake game we also have three (3) subjective metrics. Below are annotation guidelines that the annotators used to perform evaluation. 
+Qualitative evaluation metrics include Failure-related metrics, Usability and Appearance metrics. We aim at defining Usability and Appearance metrics in an objective way, however, in case of Snake game, we also have three (3) subjective metrics. Below are annotation guidelines that the annotators used to perform evaluation. 
 
 #### Annotation Guidelines (co-created with GPT-4)
 

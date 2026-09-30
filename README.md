@@ -8,8 +8,19 @@ Prompts and result tables can be found in the respective use case folders README
 Repository: https://github.com/FoundationAgents/MetaGPT  
 Commit hash number: _df9bc1858f7d396a7eef5d9718cab7587b63fd62_
 
-For tests with **AgileCoder**, **ChatDev**, **Hyperagent**, apposite forks have been created. Indication of exact forks and commit hash numbers
-is suppressed for anonymity and will be revealed upon acceptance.
+For tests with **AgileCoder**, **ChatDev**, **HyperAgent**, apposite forks have been created to support local models served through Ollama:
+
+**AgileCoder** (fork of https://github.com/FSoft-AI4Code/AgileCoder):  
+Repository: https://github.com/MichelRosselli/AgileCoder/tree/feature/ollama-fix  
+Commit hash number: _0dc96e6152527edfdc9622959bad12749bf3fc9f_
+
+**ChatDev** (fork of https://github.com/skypu/ChatDev):  
+Repository: https://github.com/MichelRosselli/ChatDev/tree/feature/ollama-fix  
+Commit hash number: _f0b53a759d24b5f140cd4cdeb9a020542ef35547_
+
+**HyperAgent** (fork of https://github.com/FSoft-AI4Code/HyperAgent):  
+Repository: https://github.com/bossforcoding/HyperAgent/tree/ollama-implementation  
+Commit hash number: _8b096e26ebdadcac505fb75f61ed268c900449bb_
 
 ### Qualitative evaluation
 
